@@ -408,7 +408,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
         style={{ backgroundColor: selectedTone.color, opacity: isPlaying ? 0.22 : 0.08 }}
       />
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col xl:flex-row gap-8">
         {/* Solfeggio Menu Selector - Left Column */}
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-4">
@@ -423,7 +423,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
           </p>
 
           <div className="mb-3 text-[10px] font-mono uppercase tracking-wider text-indigo-300/80">
-            Start Here: pick a tone tile, then use the right column to tune and play.
+            Start Here: pick a tone tile, then tune and play in the control deck below.
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-2">
@@ -462,7 +462,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
         </div>
 
         {/* Live Audio Controls & Visualizer - Right Column */}
-        <div className="w-full lg:w-[320px] flex flex-col justify-between border-t lg:border-t-0 lg:border-l border-slate-800/80 pt-6 lg:pt-0 lg:pl-8">
+        <div className="w-full xl:w-[340px] flex flex-col justify-between border-t xl:border-t-0 xl:border-l border-slate-800/80 pt-6 xl:pt-0 xl:pl-8">
           <div className="flex flex-col items-center">
             {/* Visualizer Circle representation */}
             <div className="relative w-44 h-24 mb-4 rounded-xl border border-slate-800 overflow-hidden bg-slate-950/60 shadow-inner">
@@ -523,7 +523,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
             {/* Entrainment toggles */}
             <div className="w-full space-y-2 mb-4 bg-black/40 p-2.5 rounded-xl border border-white/5">
               {/* Binaural Entrainment */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
                 <button
                   id="toggle-binaural"
                   onClick={() => setBinauralEnabled(!binauralEnabled)}
@@ -540,7 +540,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
                      id="select-brainwave-state"
                      value={brainwaveState}
                      onChange={(e) => setBrainwaveState(e.target.value)}
-                     className="text-[10px] bg-[#020205] text-slate-300 border border-white/10 rounded px-1.5 py-0.5 font-mono cursor-pointer outline-none focus:border-indigo-500"
+                     className="w-full sm:w-auto text-[10px] bg-[#020205] text-slate-300 border border-white/10 rounded px-1.5 py-0.5 font-mono cursor-pointer outline-none focus:border-indigo-500"
                   >
                     <option value="delta">Delta (2.0Hz • Astral Sleep)</option>
                     <option value="theta">Theta (4.5Hz • Awakening)</option>
@@ -550,7 +550,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
               </div>
 
               {/* LFO Modulation Shimmer */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5">
                 <button
                   id="toggle-shimmer"
                   onClick={() => setShimmerEnabled(!shimmerEnabled)}
@@ -566,7 +566,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
                      id="select-osc-shape"
                      value={waveShape}
                      onChange={(e) => setWaveShape(e.target.value as OscillatorType)}
-                     className="text-[10px] bg-[#020205] text-slate-300 border border-white/10 rounded px-1 py-0.5 font-mono cursor-pointer outline-none focus:border-indigo-500"
+                     className="w-full sm:w-auto text-[10px] bg-[#020205] text-slate-300 border border-white/10 rounded px-1 py-0.5 font-mono cursor-pointer outline-none focus:border-indigo-500"
                   >
                     <option value="sine">Sine (Pure)</option>
                     <option value="triangle">Triangle (Warm)</option>
