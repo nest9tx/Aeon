@@ -1,0 +1,6 @@
+{
+  "name": "Spiritual Awakening Guide",
+  "description": "An interactive sanctuary offering sacred geometry visualization, bio-acoustic tone generators, guided awakening exercises, and an AI spiritual companion.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
