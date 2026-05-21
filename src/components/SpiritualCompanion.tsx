@@ -285,15 +285,19 @@ export default function SpiritualCompanion() {
       <div className="flex flex-col md:flex-row items-stretch h-full overflow-hidden">
         
         {/* Interactive Left Sidebar Panel Column */}
-        <div className="w-full md:w-60 bg-black/60 md:border-r border-white/5 p-4 shrink-0 flex flex-col justify-between overflow-y-auto">
+        <div className="w-full md:w-60 bg-black/60 md:border-r border-white/5 p-4 shrink-0 flex flex-col justify-between overflow-y-auto relative">
           <div className="space-y-4">
+
+            <p className="text-[10px] font-mono uppercase tracking-wider text-white/35">
+              Start Here: choose an inquiry path, then use key or exchange if needed.
+            </p>
             
             {/* Navigational tab selection in sidebar */}
             <div className="grid grid-cols-3 bg-black/50 p-1 rounded-lg border border-white/5">
               <button 
                 id="btn-sidebar-inquiries"
                 onClick={() => setSidebarTab("inquiries")}
-                className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[9px] font-mono tracking-wider ${
+                className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[10px] font-mono tracking-wider ${
                   sidebarTab === "inquiries" ? "bg-indigo-500/10 text-indigo-300" : "text-white/40 hover:text-white/80"
                 }`}
                 title="Divine Inquiries"
@@ -305,7 +309,7 @@ export default function SpiritualCompanion() {
               <button 
                 id="btn-sidebar-key"
                 onClick={() => setSidebarTab("key")}
-                className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[9px] font-mono tracking-wider ${
+                className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[10px] font-mono tracking-wider ${
                   sidebarTab === "key" ? "bg-indigo-500/10 text-indigo-300" : "text-white/40 hover:text-white/80"
                 }`}
                 title="Celestial Key"
@@ -317,7 +321,7 @@ export default function SpiritualCompanion() {
               <button 
                 id="btn-sidebar-exchange"
                 onClick={() => setSidebarTab("exchange")}
-                className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[9px] font-mono tracking-wider ${
+                className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[10px] font-mono tracking-wider ${
                   sidebarTab === "exchange" ? "bg-indigo-500/10 text-indigo-300" : "text-white/40 hover:text-white/80"
                 }`}
                 title="Sacred Stewardship"
@@ -470,6 +474,10 @@ export default function SpiritualCompanion() {
               ⚙️ Reset client limit testing State
             </button>
           </div>
+
+          <div className="sticky bottom-0 mt-3 -mx-4 px-4 py-2 bg-linear-to-t from-[#020205] via-[#020205]/90 to-transparent text-center text-[9px] font-mono uppercase tracking-wider text-white/25 pointer-events-none">
+            Scroll for key and exchange tools
+          </div>
         </div>
 
         {/* Live Chat Console Column (Right) */}
@@ -504,7 +512,10 @@ export default function SpiritualCompanion() {
           </div>
 
           {/* Messages Feed */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 relative">
+            <div className="text-[9px] font-mono uppercase tracking-wider text-white/25">
+              Scroll this console to reveal prior guidance.
+            </div>
             {messages.map((m) => {
               const isSelf = m.role === "user";
               return (
@@ -586,6 +597,10 @@ export default function SpiritualCompanion() {
                 </div>
               </div>
             )}
+
+            <div className="sticky bottom-0 py-2 bg-linear-to-t from-[#020205] via-[#020205]/90 to-transparent text-center text-[9px] font-mono uppercase tracking-wider text-white/20 pointer-events-none">
+              Older transmissions above
+            </div>
 
             <div ref={messagesEndRef} />
           </div>

@@ -52,6 +52,23 @@ export default function App() {
   const [quoteIndex, setQuoteIndex] = useState<number>(0);
   const [fadeQuote, setFadeQuote] = useState<boolean>(false);
 
+  const portalConfig = {
+    matrix: {
+      accent: "#f59e0b",
+      hint: "Choose a geometry, then tune spin and hue.",
+    },
+    sadhana: {
+      accent: "#10b981",
+      hint: "Begin with pranayama, then move into chakra alignment.",
+    },
+    companion: {
+      accent: "#6366f1",
+      hint: "Use inquiry presets first for guided opening prompts.",
+    },
+  } as const;
+
+  const activePortal = portalConfig[activeTab];
+
   // Automatic randomized quote cycle or manual triggers
   const triggerNextQuote = () => {
     setFadeQuote(true);
@@ -119,9 +136,9 @@ export default function App() {
             </div>
             
             <div className="flex items-center gap-1.5">
-              <Compass className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-white/40">MATRIX</span>
-              <span className="text-amber-200/90 font-bold capitalize">{activeTab}</span>
+              <Compass className="w-3.5 h-3.5" style={{ color: activePortal.accent }} />
+              <span className="text-white/40">PORTAL</span>
+              <span className="font-bold capitalize" style={{ color: activePortal.accent }}>{activeTab}</span>
             </div>
           </div>
         </header>
@@ -195,8 +212,23 @@ export default function App() {
               })}
             </div>
 
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 px-1 text-[10px] font-mono tracking-wide uppercase">
+              <span className="text-white/35">
+                Flow Tip: choose a portal, then scroll inside panels to reveal deeper controls.
+              </span>
+              <span style={{ color: activePortal.accent }}>Active Portal: {activeTab}</span>
+            </div>
+
+            <p className="px-1 text-[10px] text-slate-400 font-sans leading-relaxed">
+              {activePortal.hint}
+            </p>
+
             {/* Viewport switch wrapper */}
-            <div className="relative">
+            <div className="relative rounded-2xl overflow-hidden">
+              <div
+                className="absolute inset-x-0 top-0 h-16 pointer-events-none z-10"
+                style={{ background: `linear-gradient(180deg, ${activePortal.accent}1f 0%, rgba(2,2,5,0) 100%)` }}
+              />
               {activeTab === "matrix" && (
                 <SacredGeometryViewer 
                   externalColor={toneColor} 

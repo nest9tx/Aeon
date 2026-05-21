@@ -422,6 +422,10 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
             Spiritual frequencies used for millennia to restore core biological harmony, release fear, and trigger energetic awakening. Select a harmonic center:
           </p>
 
+          <div className="mb-3 text-[10px] font-mono uppercase tracking-wider text-indigo-300/80">
+            Start Here: pick a tone tile, then use the right column to tune and play.
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-2">
             {SOLFEGGIO_TONES.map((tone) => {
               const isCurrent = tone.id === selectedTone.id;
@@ -489,6 +493,9 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
               </h4>
               <p className="text-[11px] text-amber-500 font-serif tracking-widest uppercase mb-1.5">
                 {selectedTone.translation}
+              </p>
+              <p className="text-[9px] font-mono uppercase tracking-wider text-white/35 mb-1">
+                Scroll description if truncated
               </p>
               <p className="text-[11px] text-slate-400 leading-relaxed max-h-16 overflow-y-auto pr-1">
                 {selectedTone.description}

@@ -596,7 +596,7 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
         </div>
 
         {/* Right Side: Geometries Menu & Control Parameters */}
-        <div className="w-full md:w-70 flex flex-col justify-between h-full overflow-y-auto pr-1">
+        <div className="w-full md:w-70 flex flex-col justify-between h-full overflow-y-auto pr-1 relative">
           <div className="space-y-4">
             {/* Title block */}
             <div className="flex items-center gap-2">
@@ -604,6 +604,10 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
               <h3 className="font-serif text-lg tracking-wider text-slate-100 font-medium">
                 Resonant Geometry
               </h3>
+            </div>
+
+            <div className="text-[10px] font-mono uppercase tracking-wider text-white/35">
+              Flow Tip: choose a geometry, then scroll for adjustment knobs.
             </div>
 
             {/* List selector */}
@@ -626,6 +630,7 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
                   </button>
                 ))}
               </div>
+              <p className="text-[9px] font-mono uppercase tracking-wider text-white/25 mt-1">Scroll to reveal all geometry variants</p>
             </div>
 
             {/* Geometry Details */}
@@ -725,6 +730,10 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="sticky bottom-0 mt-4 py-2 bg-linear-to-t from-[#020205] via-[#020205]/90 to-transparent text-center text-[9px] font-mono uppercase tracking-wider text-white/25 pointer-events-none">
+            More controls below
           </div>
         </div>
       </div>

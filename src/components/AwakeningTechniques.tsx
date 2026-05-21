@@ -151,6 +151,20 @@ interface AwakeningTechniquesProps {
 export default function AwakeningTechniques({ onChakraFrequencyOverride, onPranayamaPulse }: AwakeningTechniquesProps) {
   const [activeTab, setActiveTab] = useState<"breathe" | "inquiry" | "chakras" | "symptoms">("breathe");
 
+  const tabPrompt = {
+    breathe: "Start with 3 rounds, then continue to Chakra Pillars.",
+    chakras: "Select a center and sync its tone to the acoustic engine.",
+    inquiry: "Journal one line per step to deepen each inquiry cycle.",
+    symptoms: "Pick the closest symptom card and apply one grounding step.",
+  } as const;
+
+  const tabAccent = {
+    breathe: "text-emerald-300 border-emerald-500/20 bg-emerald-500/10",
+    chakras: "text-rose-300 border-rose-500/20 bg-rose-500/10",
+    inquiry: "text-indigo-300 border-indigo-500/20 bg-indigo-500/10",
+    symptoms: "text-amber-300 border-amber-500/20 bg-amber-500/10",
+  } as const;
+
   // --- 1. Pranayama State Engine ---
   const [breathePattern, setBreathePattern] = useState<"box" | "deep">("box");
   const [breathePhase, setBreathePhase] = useState<"INHALE" | "HOLD" | "EXHALE" | "HOLD_OUT">("INHALE");
@@ -319,7 +333,15 @@ export default function AwakeningTechniques({ onChakraFrequencyOverride, onPrana
       </div>
 
       {/* Main Technique Center Area */}
-      <div className="flex-1 p-6 overflow-y-auto bg-slate-950/20">
+      <div className="flex-1 p-6 overflow-y-auto bg-slate-950/20 relative">
+        <div className="mb-4 text-[10px] font-mono uppercase tracking-wider text-white/35">
+          Flow Tip: switch techniques above, then scroll each practice pane for deeper guidance.
+        </div>
+
+        <div className={`mb-4 text-[10px] font-mono uppercase tracking-wider border rounded-lg px-3 py-2 ${tabAccent[activeTab]}`}>
+          Next: {tabPrompt[activeTab]}
+        </div>
+
         {/* --- 1. Pranayama breathing screen --- */}
         {activeTab === "breathe" && (
           <div className="h-full flex flex-col items-center justify-between">
@@ -578,6 +600,10 @@ export default function AwakeningTechniques({ onChakraFrequencyOverride, onPrana
             ))}
           </div>
         )}
+
+        <div className="sticky bottom-0 -mx-6 mt-5 px-6 py-2 bg-linear-to-t from-[#020205] via-[#020205]/90 to-transparent text-center text-[9px] font-mono uppercase tracking-wider text-white/25 pointer-events-none">
+          Scroll for complete practice sequence
+        </div>
       </div>
     </div>
   );
