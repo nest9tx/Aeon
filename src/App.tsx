@@ -5,6 +5,42 @@ import SacredGeometryViewer from "./components/SacredGeometry";
 import AwakeningTechniques from "./components/AwakeningTechniques";
 import SpiritualCompanion from "./components/SpiritualCompanion";
 
+const ONBOARDING_DISMISSED_KEY = "LUMINANOVA_ONBOARDING_DISMISSED_V1";
+
+type PortalTab = "matrix" | "sadhana" | "companion";
+
+type TourStep = {
+  title: string;
+  summary: string;
+  tab?: PortalTab;
+};
+
+const TOUR_STEPS: TourStep[] = [
+  {
+    title: "Welcome to the Sanctuary",
+    summary:
+      "This space is designed as a living practice flow. Move gently: tune resonance, enter a portal, then integrate what you receive.",
+  },
+  {
+    title: "1) Silent Spirit + Resonance Deck",
+    summary:
+      "Begin with a Solfeggio tone on the left. Let the frequency settle your nervous system before moving into deeper practice.",
+    tab: "matrix",
+  },
+  {
+    title: "2) Guided Sadhana Portal",
+    summary:
+      "Use breath, chakra focus, and practical inner-work prompts. This is the structured pathway when your energy needs form.",
+    tab: "sadhana",
+  },
+  {
+    title: "3) Akashic Sage Companion",
+    summary:
+      "Ask direct questions, use response tones, and run grounding or integration tools. Contributions help keep Sage accessible to all seekers.",
+    tab: "companion",
+  },
+];
+
 const AWAKENING_QUOTES = [
   { 
     text: "Your duty is to be. Not to be this or that. 'I am that I am' sums up the whole truth.", 
@@ -48,9 +84,16 @@ export default function App() {
   const [breathingScale, setBreathingScale] = useState<number>(1.0);
   
   // UI States
-  const [activeTab, setActiveTab] = useState<"matrix" | "sadhana" | "companion">("matrix");
+  const [activeTab, setActiveTab] = useState<PortalTab>("matrix");
   const [quoteIndex, setQuoteIndex] = useState<number>(0);
   const [fadeQuote, setFadeQuote] = useState<boolean>(false);
+  const [isTourOpen, setIsTourOpen] = useState<boolean>(() => {
+    return localStorage.getItem(ONBOARDING_DISMISSED_KEY) !== "true";
+  });
+  const [tourStepIndex, setTourStepIndex] = useState<number>(0);
+  const [dontShowAgain, setDontShowAgain] = useState<boolean>(() => {
+    return localStorage.getItem(ONBOARDING_DISMISSED_KEY) === "true";
+  });
 
   const portalConfig = {
     matrix: {
@@ -96,6 +139,31 @@ export default function App() {
     }, 200);
   };
 
+  const closeTour = () => {
+    if (dontShowAgain) {
+      localStorage.setItem(ONBOARDING_DISMISSED_KEY, "true");
+    } else {
+      localStorage.removeItem(ONBOARDING_DISMISSED_KEY);
+    }
+    setIsTourOpen(false);
+  };
+
+  const openTour = () => {
+    setTourStepIndex(0);
+    setIsTourOpen(true);
+  };
+
+  const handleTourNext = () => {
+    if (tourStepIndex < TOUR_STEPS.length - 1) {
+      setTourStepIndex((prev) => prev + 1);
+      return;
+    }
+    closeTour();
+  };
+
+  const activeTourStep = TOUR_STEPS[tourStepIndex];
+  const activeTourTab = activeTourStep.tab;
+
   return (
     <div className="min-h-screen bg-[#020205] text-[#E5E7EB] flex flex-col items-center justify-between font-sans relative overflow-x-hidden selection:bg-indigo-950 selection:text-indigo-300">
       
@@ -140,6 +208,16 @@ export default function App() {
               <span className="text-white/40">PORTAL</span>
               <span className="font-bold capitalize" style={{ color: activePortal.accent }}>{activeTab}</span>
             </div>
+
+            <button
+              id="btn-open-tour"
+              onClick={openTour}
+              className="flex items-center gap-1.5 ml-1 pl-3 border-l border-white/5 text-slate-300 hover:text-indigo-200 transition cursor-pointer"
+              title="Open walkthrough"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>GUIDE</span>
+            </button>
           </div>
         </header>
 
@@ -251,6 +329,77 @@ export default function App() {
           </section>
         </main>
       </div>
+
+      {isTourOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#06070d] shadow-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-white/10 bg-black/30">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-mono tracking-wider uppercase text-indigo-300/90">Sanctuary Walkthrough</p>
+                  <h3 className="text-lg font-serif text-white mt-0.5">{activeTourStep.title}</h3>
+                </div>
+                <span className="text-[10px] font-mono text-white/45 uppercase tracking-wider">
+                  Step {tourStepIndex + 1}/{TOUR_STEPS.length}
+                </span>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 space-y-4">
+              <p className="text-sm text-slate-300 leading-relaxed">{activeTourStep.summary}</p>
+
+              {activeTourTab && (
+                <button
+                  id={`btn-tour-jump-${activeTourTab}`}
+                  onClick={() => setActiveTab(activeTourTab)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-indigo-500/25 bg-indigo-500/10 text-indigo-200 text-xs font-mono uppercase tracking-wide hover:bg-indigo-500/15 transition cursor-pointer"
+                >
+                  Jump To {activeTourTab}
+                </button>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                {TOUR_STEPS.map((step, idx) => (
+                  <div
+                    key={step.title}
+                    className={`h-1.5 rounded-full transition-all ${idx === tourStepIndex ? "w-10 bg-indigo-400" : "w-4 bg-white/20"}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-white/10 bg-black/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <label className="inline-flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none">
+                <input
+                  id="tour-dont-show-again"
+                  type="checkbox"
+                  checked={dontShowAgain}
+                  onChange={(e) => setDontShowAgain(e.target.checked)}
+                  className="accent-indigo-500"
+                />
+                <span>Don&apos;t show again</span>
+              </label>
+
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  id="btn-tour-skip"
+                  onClick={closeTour}
+                  className="px-3 py-1.5 rounded-lg border border-white/15 text-slate-300 text-xs font-mono uppercase tracking-wide hover:bg-white/5 transition cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  id="btn-tour-next"
+                  onClick={handleTourNext}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-black text-xs font-mono uppercase tracking-wide font-bold transition cursor-pointer"
+                >
+                  {tourStepIndex === TOUR_STEPS.length - 1 ? "Finish" : "Next"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Holistic Cosmic Footer section */}
       <footer className="w-full bg-[#020205] py-6 border-t border-white/5 mt-12 text-center text-white/30 font-mono text-[9px] tracking-wider uppercase z-10 px-4">
