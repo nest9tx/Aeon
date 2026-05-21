@@ -408,7 +408,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
         style={{ backgroundColor: selectedTone.color, opacity: isPlaying ? 0.22 : 0.08 }}
       />
 
-      <div className="flex flex-col xl:flex-row gap-8">
+      <div className="flex flex-col gap-8">
         {/* Solfeggio Menu Selector - Left Column */}
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-4">
@@ -426,7 +426,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
             Start Here: pick a tone tile, then tune and play in the control deck below.
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 2xl:grid-cols-3 gap-2.5">
             {SOLFEGGIO_TONES.map((tone) => {
               const isCurrent = tone.id === selectedTone.id;
               return (
@@ -449,10 +449,10 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
                       style={{ backgroundColor: tone.color, boxShadow: `0 0 6px ${tone.color}` }}
                     />
                   </div>
-                  <span className="text-[11px] font-serif uppercase tracking-widest text-slate-200 truncate">
+                  <span className="text-[10px] font-serif uppercase tracking-wide leading-snug text-slate-200">
                     {tone.name} • {tone.syllable}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-sans truncate">
+                  <span className="text-[10px] text-slate-400 font-sans leading-tight">
                     {tone.chakra}
                   </span>
                 </button>
@@ -462,7 +462,7 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
         </div>
 
         {/* Live Audio Controls & Visualizer - Right Column */}
-        <div className="w-full xl:w-[340px] flex flex-col justify-between border-t xl:border-t-0 xl:border-l border-slate-800/80 pt-6 xl:pt-0 xl:pl-8">
+        <div className="w-full flex flex-col justify-between border-t border-slate-800/80 pt-6">
           <div className="flex flex-col items-center">
             {/* Visualizer Circle representation */}
             <div className="relative w-44 h-24 mb-4 rounded-xl border border-slate-800 overflow-hidden bg-slate-950/60 shadow-inner">
