@@ -81,6 +81,7 @@ const DONATION_TIERS = [
 ];
 
 const CHAT_HISTORY_STORAGE_KEY = "LUMINANOVA_CHAT_HISTORY_V1";
+const JOURNEY_MILESTONES_STORAGE_KEY = "LUMINANOVA_JOURNEY_MILESTONES_V1";
 
 const DEFAULT_STRIPE_CHECKOUT_URLS: Record<string, string> = {
   "3.33": "https://buy.stripe.com/5kQaEQ2jv3WN0GZh12bEA07",
@@ -92,6 +93,25 @@ const STRIPE_CHECKOUT_URLS: Record<string, string | undefined> = {
   "3.33": import.meta.env.VITE_STRIPE_CHECKOUT_333 || DEFAULT_STRIPE_CHECKOUT_URLS["3.33"],
   "7.77": import.meta.env.VITE_STRIPE_CHECKOUT_777 || DEFAULT_STRIPE_CHECKOUT_URLS["7.77"],
   "8.88": import.meta.env.VITE_STRIPE_CHECKOUT_888 || DEFAULT_STRIPE_CHECKOUT_URLS["8.88"],
+};
+
+const DISTRESS_KEYWORDS = [
+  "panic",
+  "can't cope",
+  "cannot cope",
+  "suicidal",
+  "hurt myself",
+  "harm myself",
+  "hopeless",
+  "overwhelmed",
+  "crisis",
+];
+
+type JourneyMilestone = {
+  id: string;
+  label: string;
+  kind: "insight" | "grounding" | "integration" | "first-contact";
+  timestamp: string;
 };
 
 export default function SpiritualCompanion() {
@@ -124,6 +144,17 @@ export default function SpiritualCompanion() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const [responseTone, setResponseTone] = useState<ResponseToneId>("gentle");
+  const [journeyMilestones, setJourneyMilestones] = useState<JourneyMilestone[]>(() => {
+    try {
+      const raw = localStorage.getItem(JOURNEY_MILESTONES_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.slice(-30);
+    } catch {
+      return [];
+    }
+  });
 
   // Sidebar control tab
   const [sidebarTab, setSidebarTab] = useState<"inquiries" | "key" | "exchange">("inquiries");
@@ -188,6 +219,14 @@ export default function SpiritualCompanion() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(JOURNEY_MILESTONES_STORAGE_KEY, JSON.stringify(journeyMilestones.slice(-30)));
+    } catch {
+      // no-op: milestone persistence is best effort
+    }
+  }, [journeyMilestones]);
+
   // Sync temp key state on tab change/load
   useEffect(() => {
     setTempKeyInput(userApiKey);
@@ -222,6 +261,21 @@ export default function SpiritualCompanion() {
     setDonorEmail("beacon@luminanova.org");
   };
 
+  const pushMilestone = (label: string, kind: JourneyMilestone["kind"]) => {
+    const milestone: JourneyMilestone = {
+      id: Math.random().toString(36).slice(2),
+      label,
+      kind,
+      timestamp: new Date().toISOString(),
+    };
+    setJourneyMilestones((prev) => [...prev, milestone].slice(-30));
+  };
+
+  const handleGroundingProtocol = () => {
+    pushMilestone("Entered 90-second grounding protocol", "grounding");
+    handleSendMessage(GROUNDING_PROTOCOL_PROMPT);
+  };
+
   const buildIntegrationSummary = () => {
     const recentUserMessages = messages.filter((m) => m.role === "user").slice(-3);
     const latestUserText = recentUserMessages[recentUserMessages.length - 1]?.text || "I am listening inwardly.";
@@ -244,6 +298,34 @@ export default function SpiritualCompanion() {
       timestamp: new Date(),
     };
     setMessages((prev) => [...prev, integrationMessage]);
+    pushMilestone("Captured an integration summary", "integration");
+  };
+
+  const getTopThemes = () => {
+    const stopWords = new Set([
+      "the", "and", "for", "with", "that", "this", "from", "your", "you", "into", "have", "are", "about", "what", "how", "when", "where", "while", "through", "during", "would", "could", "should", "feel", "just", "like", "than", "then", "they", "them", "been", "their", "it's", "i", "me", "my", "a", "an", "to", "of", "in", "on", "at", "or",
+    ]);
+
+    const counts: Record<string, number> = {};
+    const words = messages
+      .filter((m) => m.role === "user")
+      .slice(-12)
+      .flatMap((m) =>
+        m.text
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .split(/\s+/)
+          .filter((w) => w.length > 3 && !stopWords.has(w))
+      );
+
+    words.forEach((word) => {
+      counts[word] = (counts[word] || 0) + 1;
+    });
+
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([word]) => word);
   };
 
   const handleSendMessage = async (customText?: string) => {
@@ -269,6 +351,11 @@ export default function SpiritualCompanion() {
       text: textToSend,
       timestamp: new Date()
     };
+
+    const userMessagesSoFar = messages.filter((m) => m.role === "user").length;
+    if (userMessagesSoFar === 0) {
+      pushMilestone("First communion with Sage", "first-contact");
+    }
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
@@ -392,6 +479,10 @@ export default function SpiritualCompanion() {
 
   const remainingChats = hasFreeAccessBlessing || userApiKey.trim() ? "∞" : Math.max(0, 3 - dailyCount);
   const currentTone = RESPONSE_TONES.find((tone) => tone.id === responseTone) || RESPONSE_TONES[0];
+  const topThemes = getTopThemes();
+  const shouldShowDistressSupport = DISTRESS_KEYWORDS.some((keyword) =>
+    inputMessage.toLowerCase().includes(keyword)
+  );
 
   return (
     <div id="ai-spiritual-guide" className="temple-panel rounded-2xl flex flex-col items-stretch overflow-hidden h-135 relative">
@@ -489,7 +580,7 @@ export default function SpiritualCompanion() {
                 <div className="space-y-1.5 pt-1">
                   <button
                     id="btn-grounding-protocol"
-                    onClick={() => handleSendMessage(GROUNDING_PROTOCOL_PROMPT)}
+                    onClick={handleGroundingProtocol}
                     disabled={isLoading}
                     className="w-full text-left py-2 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/15 text-[11px] text-emerald-200 transition-all cursor-pointer font-sans disabled:opacity-40"
                   >
@@ -503,6 +594,47 @@ export default function SpiritualCompanion() {
                   >
                     Create Integration Summary
                   </button>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-black/40 p-2.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] text-white/60 font-mono uppercase tracking-wide">Journey Timeline</p>
+                    <button
+                      id="btn-mark-journey-insight"
+                      onClick={() => pushMilestone("Marked a conscious insight", "insight")}
+                      className="text-[9px] font-mono uppercase tracking-wide text-indigo-300 hover:text-indigo-200 cursor-pointer"
+                    >
+                      Mark Insight
+                    </button>
+                  </div>
+
+                  {topThemes.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {topThemes.map((theme) => (
+                        <span
+                          key={theme}
+                          className="px-1.5 py-0.5 rounded-md border border-indigo-500/20 bg-indigo-500/10 text-[9px] font-mono uppercase tracking-wide text-indigo-200"
+                        >
+                          {theme}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5 max-h-26 overflow-y-auto pr-1">
+                    {journeyMilestones.length === 0 ? (
+                      <p className="text-[10px] text-slate-500 font-sans">Your milestones will appear here as your path unfolds.</p>
+                    ) : (
+                      journeyMilestones.slice(-4).reverse().map((milestone) => (
+                        <div key={milestone.id} className="text-[10px] text-slate-300 font-sans leading-relaxed border-l border-white/10 pl-2">
+                          <p>{milestone.label}</p>
+                          <p className="text-[9px] text-white/35 font-mono uppercase tracking-wide">
+                            {new Date(milestone.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -744,6 +876,16 @@ export default function SpiritualCompanion() {
 
           {/* User Input Frame */}
           <div className="p-3 bg-[#020205] border-t border-white/5">
+            <div className="mb-2 px-1 py-1.5 rounded-lg border border-emerald-500/10 bg-emerald-500/5 text-[9px] text-emerald-200/90 font-sans leading-relaxed">
+              Sage supports spiritual reflection and practical grounding. If you are in immediate danger or considering self-harm, contact local emergency services or a crisis hotline now.
+            </div>
+
+            {shouldShowDistressSupport && (
+              <div className="mb-2 px-2 py-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-200 font-sans leading-relaxed">
+                You may be carrying a lot right now. Tap Ground Me Now for immediate regulation support, then ask for one tiny next step.
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-wider text-white/35 mb-2 px-1">
               <span>Current Response Tone: {currentTone.label}</span>
               <span className="text-indigo-300/80">Refine in Inquire tab</span>
