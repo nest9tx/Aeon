@@ -54,6 +54,18 @@ const DONATION_TIERS = [
 
 const CHAT_HISTORY_STORAGE_KEY = "LUMINANOVA_CHAT_HISTORY_V1";
 
+const DEFAULT_STRIPE_CHECKOUT_URLS: Record<string, string> = {
+  "3.33": "https://buy.stripe.com/5kQaEQ2jv3WN0GZh12bEA07",
+  "7.77": "https://buy.stripe.com/eVqfZaf6h1OF89rbGIbEA08",
+  "8.88": "https://buy.stripe.com/00w8wI4rDbpf75n9yAbEA09",
+};
+
+const STRIPE_CHECKOUT_URLS: Record<string, string | undefined> = {
+  "3.33": import.meta.env.VITE_STRIPE_CHECKOUT_333 || DEFAULT_STRIPE_CHECKOUT_URLS["3.33"],
+  "7.77": import.meta.env.VITE_STRIPE_CHECKOUT_777 || DEFAULT_STRIPE_CHECKOUT_URLS["7.77"],
+  "8.88": import.meta.env.VITE_STRIPE_CHECKOUT_888 || DEFAULT_STRIPE_CHECKOUT_URLS["8.88"],
+};
+
 export default function SpiritualCompanion() {
   const [messages, setMessages] = useState<Message[]>(() => {
     const fallback = [
@@ -122,6 +134,9 @@ export default function SpiritualCompanion() {
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const hasLiveCheckout = Boolean(
+    STRIPE_CHECKOUT_URLS["3.33"] || STRIPE_CHECKOUT_URLS["7.77"] || STRIPE_CHECKOUT_URLS["8.88"]
+  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -158,6 +173,20 @@ export default function SpiritualCompanion() {
       setIsSavedSuccessfully(true);
       setTimeout(() => setIsSavedSuccessfully(false), 3000);
     }
+  };
+
+  const handleDonationTierSelect = (tier: typeof DONATION_TIERS[0]) => {
+    const checkoutUrl = STRIPE_CHECKOUT_URLS[tier.amount];
+    if (checkoutUrl) {
+      window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // Fallback: local simulation mode when checkout links are not configured yet
+    setActiveDonation(tier);
+    setSimulationStep("input");
+    setDonorName("");
+    setDonorEmail("beacon@luminanova.org");
   };
 
   const handleSendMessage = async (customText?: string) => {
@@ -326,7 +355,7 @@ export default function SpiritualCompanion() {
                 id="btn-sidebar-inquiries"
                 onClick={() => setSidebarTab("inquiries")}
                 className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[10px] font-mono tracking-wider ${
-                  sidebarTab === "inquiries" ? "bg-indigo-500/10 text-indigo-300" : "text-white/40 hover:text-white/80"
+                  sidebarTab === "inquiries" ? "bg-indigo-500/15 text-indigo-100" : "text-slate-300 hover:text-white"
                 }`}
                 title="Divine Inquiries"
               >
@@ -338,7 +367,7 @@ export default function SpiritualCompanion() {
                 id="btn-sidebar-key"
                 onClick={() => setSidebarTab("key")}
                 className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[10px] font-mono tracking-wider ${
-                  sidebarTab === "key" ? "bg-indigo-500/10 text-indigo-300" : "text-white/40 hover:text-white/80"
+                  sidebarTab === "key" ? "bg-indigo-500/15 text-indigo-100" : "text-slate-300 hover:text-white"
                 }`}
                 title="Celestial Key"
               >
@@ -350,7 +379,7 @@ export default function SpiritualCompanion() {
                 id="btn-sidebar-exchange"
                 onClick={() => setSidebarTab("exchange")}
                 className={`flex flex-col items-center justify-center py-1.5 rounded transition cursor-pointer text-[10px] font-mono tracking-wider ${
-                  sidebarTab === "exchange" ? "bg-indigo-500/10 text-indigo-300" : "text-white/40 hover:text-white/80"
+                  sidebarTab === "exchange" ? "bg-indigo-500/15 text-indigo-100" : "text-slate-300 hover:text-white"
                 }`}
                 title="Sacred Stewardship"
               >
@@ -457,19 +486,16 @@ export default function SpiritualCompanion() {
                 <p className="text-[11px] text-slate-300/90 leading-relaxed font-sans">
                   Align energy, support server bills, and unlock unlimited messaging forever via an ethical, fixed-amount Stripe contribution.
                 </p>
+                <p className="text-[10px] text-white/60 leading-relaxed font-mono uppercase tracking-wide">
+                  {hasLiveCheckout ? "Live checkout enabled: selecting a tier opens Stripe checkout." : "Simulation mode active: set Stripe checkout URLs to enable live payments."}
+                </p>
 
                 <div className="space-y-2 pt-1.5">
                   {DONATION_TIERS.map((tier) => (
                     <button
                       id={`btn-donation-tier-${tier.amount.replace(".", "")}`}
                       key={tier.amount}
-                      onClick={() => {
-                        setActiveDonation(tier);
-                        setSimulationStep("input");
-                        setDonorName("");
-                        // Use actual user context email if available
-                        setDonorEmail("beacon@luminanova.org");
-                      }}
+                      onClick={() => handleDonationTierSelect(tier)}
                       className="w-full p-2 rounded-xl text-left border border-white/5 bg-black/40 hover:border-indigo-500/20 hover:bg-white/5 transition duration-300 group cursor-pointer"
                     >
                       <div className="flex items-center justify-between mb-1">
@@ -754,7 +780,7 @@ export default function SpiritualCompanion() {
 
                 <div className="flex items-center gap-2 text-[9px] text-slate-500 leading-snug">
                   <Lock className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span>Stripe Devotion Pipeline is fully integrated for security. Scammers card testing is completely blocked via static pricing constraints.</span>
+                  <span>This modal is simulation mode for design/testing. Configure Stripe checkout URLs to switch to live secure payments.</span>
                 </div>
 
                 <button

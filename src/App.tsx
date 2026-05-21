@@ -201,19 +201,19 @@ export default function App() {
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all duration-300 cursor-pointer ${
                       isCurrent 
-                        ? "bg-white/5 border border-white/5 text-amber-200/90 shadow-[0_0_15px_rgba(255,255,255,0.02)]" 
-                        : "text-white/40 hover:text-white/80"
+                        ? "bg-white/10 border border-white/10 text-amber-100 shadow-[0_0_15px_rgba(255,255,255,0.04)]" 
+                        : "text-slate-300 hover:text-white"
                     }`}
                   >
                     <span className="font-serif text-xs tracking-wider uppercase font-medium">{tab.label}</span>
-                    <span className="text-[9px] font-mono tracking-wide uppercase text-white/20 mt-0.5">{tab.sub}</span>
+                    <span className="text-[10px] font-mono tracking-wide uppercase text-white/45 mt-0.5">{tab.sub}</span>
                   </button>
                 );
               })}
             </div>
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 px-1 text-[11px] font-mono tracking-wide uppercase">
-              <span className="text-white/35">
+              <span className="text-white/55">
                 Flow Tip: choose a portal, then scroll inside panels to reveal deeper controls.
               </span>
               <span style={{ color: activePortal.accent }}>Active Portal: {activeTab}</span>
