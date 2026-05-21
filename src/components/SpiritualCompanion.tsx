@@ -28,6 +28,34 @@ const SUGGESTED_QUERIES = [
   { text: "Is my 'dark night of the soul' an illness or an initiation?", label: "Dark Night vs Illusion" }
 ];
 
+const RESPONSE_TONES = [
+  {
+    id: "gentle",
+    label: "Gentle Mirror",
+    instruction: "Respond with calm reassurance, short grounded steps, and warm compassionate language.",
+  },
+  {
+    id: "direct",
+    label: "Direct Clarity",
+    instruction: "Respond plainly and concretely with practical steps and minimal mystic language.",
+  },
+  {
+    id: "mystical",
+    label: "Mystic Poetics",
+    instruction: "Respond with symbolic language, contemplative metaphors, and soul-oriented framing.",
+  },
+  {
+    id: "balanced",
+    label: "Balanced Sage",
+    instruction: "Blend practical guidance with spiritual framing in equal measure.",
+  },
+] as const;
+
+type ResponseToneId = (typeof RESPONSE_TONES)[number]["id"];
+
+const GROUNDING_PROTOCOL_PROMPT =
+  "Guide me through a focused 90-second grounding protocol for overwhelm: 3 breaths, 3 body anchors, 1 simple action, and one closing affirmation.";
+
 const DONATION_TIERS = [
   { 
     amount: "3.33", 
@@ -95,6 +123,7 @@ export default function SpiritualCompanion() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [responseTone, setResponseTone] = useState<ResponseToneId>("gentle");
 
   // Sidebar control tab
   const [sidebarTab, setSidebarTab] = useState<"inquiries" | "key" | "exchange">("inquiries");
@@ -133,13 +162,17 @@ export default function SpiritualCompanion() {
   const [donorEmail, setDonorEmail] = useState("");
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const hasLiveCheckout = Boolean(
     STRIPE_CHECKOUT_URLS["3.33"] || STRIPE_CHECKOUT_URLS["7.77"] || STRIPE_CHECKOUT_URLS["8.88"]
   );
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!messagesContainerRef.current) return;
+    messagesContainerRef.current.scrollTo({
+      top: messagesContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   };
 
   useEffect(() => {
@@ -189,6 +222,30 @@ export default function SpiritualCompanion() {
     setDonorEmail("beacon@luminanova.org");
   };
 
+  const buildIntegrationSummary = () => {
+    const recentUserMessages = messages.filter((m) => m.role === "user").slice(-3);
+    const latestUserText = recentUserMessages[recentUserMessages.length - 1]?.text || "I am listening inwardly.";
+    const shortTheme = latestUserText.split(/[.?!]/)[0]?.trim() || latestUserText;
+
+    return [
+      "**Integration Pause**",
+      "- Current thread: " + shortTheme,
+      "- Embodied next step: take 3 slow breaths and relax your jaw, shoulders, and belly.",
+      "- Reflection: What feels 5% clearer in me right now?",
+      "- Anchor phrase: I can move gently and stay present.",
+    ].join("\n");
+  };
+
+  const handleCreateIntegrationSummary = () => {
+    const integrationMessage: Message = {
+      id: Math.random().toString(),
+      role: "model",
+      text: buildIntegrationSummary(),
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, integrationMessage]);
+  };
+
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || inputMessage;
     if (!textToSend.trim() || isLoading) return;
@@ -228,11 +285,18 @@ export default function SpiritualCompanion() {
         );
       }
 
-      // Package messages for history simulation
-      const payloadMessages = [...messages, userMessage].map((m) => ({
-        role: m.role,
-        text: m.text
-      }));
+      // Package messages and append private style preference to latest user prompt only.
+      const toneInstruction = RESPONSE_TONES.find((tone) => tone.id === responseTone)?.instruction;
+      const pendingMessages = [...messages, userMessage];
+      const payloadMessages = pendingMessages.map((m, idx) => {
+        const isLatestUserMessage = idx === pendingMessages.length - 1 && m.role === "user";
+        return {
+          role: m.role,
+          text: isLatestUserMessage && toneInstruction
+            ? `${m.text}\n\nResponse style preference from seeker: ${toneInstruction}`
+            : m.text,
+        };
+      });
 
       const response = await fetch("/api/spiritual-guidance", {
         method: "POST",
@@ -327,6 +391,7 @@ export default function SpiritualCompanion() {
   };
 
   const remainingChats = hasFreeAccessBlessing || userApiKey.trim() ? "∞" : Math.max(0, 3 - dailyCount);
+  const currentTone = RESPONSE_TONES.find((tone) => tone.id === responseTone) || RESPONSE_TONES[0];
 
   return (
     <div id="ai-spiritual-guide" className="temple-panel rounded-2xl flex flex-col items-stretch overflow-hidden h-135 relative">
@@ -389,6 +454,25 @@ export default function SpiritualCompanion() {
                 <p className="text-[11px] text-slate-300/90 leading-relaxed font-sans">
                   Choose a tailored path of inquiry to trigger instant thematic responses or symptom remedies.
                 </p>
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-white/55 font-mono uppercase tracking-wide">Response Tone</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {RESPONSE_TONES.map((tone) => (
+                      <button
+                        id={`btn-response-tone-${tone.id}`}
+                        key={tone.id}
+                        onClick={() => setResponseTone(tone.id)}
+                        className={`rounded-lg border px-2 py-1.5 text-[10px] font-mono tracking-wide transition cursor-pointer ${
+                          responseTone === tone.id
+                            ? "border-indigo-400/40 bg-indigo-500/15 text-indigo-100"
+                            : "border-white/10 bg-black/40 text-slate-300 hover:text-white hover:border-indigo-400/25"
+                        }`}
+                      >
+                        {tone.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="space-y-1.5 max-h-45 md:max-h-none overflow-y-auto pr-1">
                   {SUGGESTED_QUERIES.map((query, idx) => (
                     <button
@@ -401,6 +485,24 @@ export default function SpiritualCompanion() {
                       {query.label}
                     </button>
                   ))}
+                </div>
+                <div className="space-y-1.5 pt-1">
+                  <button
+                    id="btn-grounding-protocol"
+                    onClick={() => handleSendMessage(GROUNDING_PROTOCOL_PROMPT)}
+                    disabled={isLoading}
+                    className="w-full text-left py-2 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/15 text-[11px] text-emerald-200 transition-all cursor-pointer font-sans disabled:opacity-40"
+                  >
+                    Ground Me Now (90s Protocol)
+                  </button>
+                  <button
+                    id="btn-session-integration"
+                    onClick={handleCreateIntegrationSummary}
+                    disabled={messages.length < 2}
+                    className="w-full text-left py-2 px-2.5 rounded-lg border border-white/10 bg-black/40 hover:bg-white/5 text-[11px] text-slate-300 hover:text-indigo-200 transition-all cursor-pointer font-sans disabled:opacity-40"
+                  >
+                    Create Integration Summary
+                  </button>
                 </div>
               </div>
             )}
@@ -548,7 +650,7 @@ export default function SpiritualCompanion() {
           </div>
 
           {/* Messages Feed */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 relative">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 relative">
             <div className="text-[10px] font-mono uppercase tracking-wider text-white/35">
               Scroll this console to reveal prior guidance.
             </div>
@@ -638,11 +740,14 @@ export default function SpiritualCompanion() {
               Older transmissions above
             </div>
 
-            <div ref={messagesEndRef} />
           </div>
 
           {/* User Input Frame */}
           <div className="p-3 bg-[#020205] border-t border-white/5">
+            <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-wider text-white/35 mb-2 px-1">
+              <span>Current Response Tone: {currentTone.label}</span>
+              <span className="text-indigo-300/80">Refine in Inquire tab</span>
+            </div>
             <div className="flex items-center gap-2">
               <input
                 id="companion-chat-input"
