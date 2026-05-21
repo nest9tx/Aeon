@@ -192,6 +192,7 @@ export default function SpiritualCompanion() {
   const [donorName, setDonorName] = useState("");
   const [donorEmail, setDonorEmail] = useState("");
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
+  const [showSageIntro, setShowSageIntro] = useState(false);
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const hasLiveCheckout = Boolean(
@@ -779,6 +780,28 @@ export default function SpiritualCompanion() {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="px-4 py-2 border-b border-white/5 bg-black/25">
+            <button
+              id="btn-toggle-sage-intro"
+              onClick={() => setShowSageIntro((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wide text-slate-300 hover:text-indigo-200 transition cursor-pointer"
+            >
+              <Info className="w-3.5 h-3.5" />
+              <span>{showSageIntro ? "Hide Sage Guidance" : "Who is Sage + How to Interact"}</span>
+            </button>
+
+            {showSageIntro && (
+              <div className="mt-2 rounded-xl border border-indigo-500/20 bg-indigo-500/8 p-3 text-left space-y-2">
+                <p className="text-[11px] text-slate-200 leading-relaxed font-sans">
+                  Sage is a contemplative companion designed to help seekers move from overwhelm to clarity through grounded spiritual reflection.
+                </p>
+                <p className="text-[10px] text-slate-300/90 leading-relaxed font-sans">
+                  Best interaction flow: share your present state, choose a response tone, ask one clear question, then use Integration Summary to anchor what you learned.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Messages Feed */}
