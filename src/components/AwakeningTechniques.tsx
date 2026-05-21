@@ -334,11 +334,11 @@ export default function AwakeningTechniques({ onChakraFrequencyOverride, onPrana
 
       {/* Main Technique Center Area */}
       <div className="flex-1 p-6 overflow-y-auto bg-slate-950/20 relative">
-        <div className="mb-4 text-[10px] font-mono uppercase tracking-wider text-white/35">
+        <div className="mb-4 text-[11px] font-mono uppercase tracking-wider text-white/50">
           Flow Tip: switch techniques above, then scroll each practice pane for deeper guidance.
         </div>
 
-        <div className={`mb-4 text-[10px] font-mono uppercase tracking-wider border rounded-lg px-3 py-2 ${tabAccent[activeTab]}`}>
+        <div className={`mb-4 text-[11px] font-mono uppercase tracking-wider border rounded-lg px-3 py-2 ${tabAccent[activeTab]}`}>
           Next: {tabPrompt[activeTab]}
         </div>
 
@@ -347,7 +347,7 @@ export default function AwakeningTechniques({ onChakraFrequencyOverride, onPrana
           <div className="h-full flex flex-col items-center justify-between">
             <div className="text-center max-w-md">
               <h4 className="font-serif text-base text-slate-100 mb-1">Guided Awakening Pranayama</h4>
-              <p className="text-[11px] text-slate-400 font-sans">
+              <p className="text-[13px] text-slate-300 font-sans leading-relaxed">
                 Steady breathing synchronizes the autonomic nervous system, clearing mental chatter and allowing the bio-field to settle into pristine cosmic awareness.
               </p>
             </div>
@@ -513,7 +513,7 @@ export default function AwakeningTechniques({ onChakraFrequencyOverride, onPrana
             <div className="flex justify-between items-center">
               <div>
                 <h5 className="font-serif text-sm text-slate-100 uppercase tracking-widest">Atma-Vichara Inquiry</h5>
-                <span className="text-[10px] text-slate-400 font-mono">STEP {inquiryStep + 1} OF {INQUIRY_STEPS.length}</span>
+                <span className="text-[11px] text-slate-300 font-mono">STEP {inquiryStep + 1} OF {INQUIRY_STEPS.length}</span>
               </div>
               <div className="flex gap-1.5">
                 <button
@@ -541,7 +541,7 @@ export default function AwakeningTechniques({ onChakraFrequencyOverride, onPrana
                 <h6 className="font-serif text-[15px] font-bold text-indigo-400 leading-snug">
                   {INQUIRY_STEPS[inquiryStep].question}
                 </h6>
-                <p className="text-xs text-slate-300 leading-relaxed font-sans select-none">
+                <p className="text-sm text-slate-200 leading-relaxed font-sans select-none">
                   {INQUIRY_STEPS[inquiryStep].guidance}
                 </p>
               </div>
@@ -581,7 +581,7 @@ export default function AwakeningTechniques({ onChakraFrequencyOverride, onPrana
                     <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                     {card.symptom}
                   </h5>
-                  <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                  <p className="text-[12px] text-slate-300 leading-relaxed font-sans">
                     {card.esotericMeaning}
                   </p>
                 </div>

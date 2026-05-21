@@ -12,6 +12,23 @@ const SYSTEM_INSTRUCTION =
   "but speak as a true spiritual friend (Kalyana-mitra) with serene authority. Keep answers reasonably brief, " +
   "poetic, and deeply spiritual.";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isTransientModelError = (error: any) => {
+  const message = String(error?.message || "").toLowerCase();
+  const status = Number(error?.status || error?.code || 0);
+  return (
+    status === 429 ||
+    status === 503 ||
+    message.includes("503") ||
+    message.includes("429") ||
+    message.includes("unavailable") ||
+    message.includes("high demand") ||
+    message.includes("overloaded") ||
+    message.includes("temporarily")
+  );
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed." });
@@ -51,14 +68,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       parts: [{ text: m.text }],
     }));
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.75,
-      },
-    });
+    let response: any = null;
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        response = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents,
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION,
+            temperature: 0.75,
+          },
+        });
+        break;
+      } catch (error: any) {
+        lastError = error;
+        if (attempt < 3 && isTransientModelError(error)) {
+          await sleep(500 * attempt);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    if (!response && lastError) {
+      throw lastError;
+    }
 
     const reply =
       response.text ||
@@ -66,6 +102,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.json({ text: reply });
   } catch (error: any) {
     console.error("Gemini Spiritual Guidance Error:", error);
+    if (isTransientModelError(error)) {
+      return res.status(503).json({
+        error:
+          "The guidance model is under heavy demand right now. Please try again in about 20-40 seconds. Your key is valid; this is a temporary capacity issue.",
+      });
+    }
+
     res.status(500).json({
       error:
         error.message ||

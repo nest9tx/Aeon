@@ -606,13 +606,13 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
               </h3>
             </div>
 
-            <div className="text-[10px] font-mono uppercase tracking-wider text-white/35">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-white/50">
               Flow Tip: choose a geometry, then scroll for adjustment knobs.
             </div>
 
             {/* List selector */}
             <div className="space-y-1">
-              <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 block mb-1">Select Matrix Geometry:</span>
+              <span className="text-[11px] uppercase font-mono tracking-wider text-slate-300 block mb-1">Select Matrix Geometry:</span>
               <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                 {GEOMETRIES.map((geo) => (
                   <button
@@ -630,18 +630,18 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
                   </button>
                 ))}
               </div>
-              <p className="text-[9px] font-mono uppercase tracking-wider text-white/25 mt-1">Scroll to reveal all geometry variants</p>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-white/45 mt-1">Scroll to reveal all geometry variants</p>
             </div>
 
             {/* Geometry Details */}
-            <div className="bg-black/40 p-3 rounded-xl border border-white/5 leading-relaxed text-[11px] text-slate-300">
-              <p className="text-indigo-400 font-mono font-bold uppercase text-[10px] tracking-wider mb-1">
+            <div className="bg-black/40 p-3 rounded-xl border border-white/5 leading-relaxed text-[12px] text-slate-200">
+              <p className="text-indigo-300 font-mono font-bold uppercase text-[11px] tracking-wider mb-1">
                 Philosophical Meaning
               </p>
               <p className="mb-2 text-slate-300 select-none">
                 {selectedGeo.description}
               </p>
-              <p className="text-slate-400 italic font-serif border-t border-white/5 pt-1.5 mt-1">
+              <p className="text-slate-300 italic font-serif border-t border-white/5 pt-1.5 mt-1">
                 &ldquo;{selectedGeo.metaphor}&rdquo;
               </p>
             </div>

@@ -212,14 +212,14 @@ export default function App() {
               })}
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 px-1 text-[10px] font-mono tracking-wide uppercase">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 px-1 text-[11px] font-mono tracking-wide uppercase">
               <span className="text-white/35">
                 Flow Tip: choose a portal, then scroll inside panels to reveal deeper controls.
               </span>
               <span style={{ color: activePortal.accent }}>Active Portal: {activeTab}</span>
             </div>
 
-            <p className="px-1 text-[10px] text-slate-400 font-sans leading-relaxed">
+            <p className="px-1 text-[12px] text-slate-300 font-sans leading-relaxed">
               {activePortal.hint}
             </p>
 

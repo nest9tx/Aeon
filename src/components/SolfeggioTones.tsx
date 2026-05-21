@@ -418,11 +418,11 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
             </h3>
           </div>
           
-          <p className="text-xs text-slate-400 mb-5 leading-relaxed font-sans">
+          <p className="text-sm text-slate-300 mb-5 leading-relaxed font-sans">
             Spiritual frequencies used for millennia to restore core biological harmony, release fear, and trigger energetic awakening. Select a harmonic center:
           </p>
 
-          <div className="mb-3 text-[10px] font-mono uppercase tracking-wider text-indigo-300/80">
+          <div className="mb-3 text-[11px] font-mono uppercase tracking-wider text-indigo-200/90">
             Start Here: pick a tone tile, then tune and play in the control deck below.
           </div>
 
@@ -449,10 +449,10 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
                       style={{ backgroundColor: tone.color, boxShadow: `0 0 6px ${tone.color}` }}
                     />
                   </div>
-                  <span className="text-[10px] font-serif uppercase tracking-wide leading-snug text-slate-200">
+                  <span className="text-[11px] font-serif uppercase tracking-wide leading-snug text-slate-100">
                     {tone.name} • {tone.syllable}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-sans leading-tight">
+                  <span className="text-[11px] text-slate-300 font-sans leading-tight">
                     {tone.chakra}
                   </span>
                 </button>
@@ -494,17 +494,17 @@ export default function SolfeggioTones({ onToneChange, activeFrequencyOverride }
               <p className="text-[11px] text-amber-500 font-serif tracking-widest uppercase mb-1.5">
                 {selectedTone.translation}
               </p>
-              <p className="text-[9px] font-mono uppercase tracking-wider text-white/35 mb-1">
+              <p className="text-[10px] font-mono uppercase tracking-wider text-white/50 mb-1">
                 Scroll description if truncated
               </p>
-              <p className="text-[11px] text-slate-400 leading-relaxed max-h-16 overflow-y-auto pr-1">
+              <p className="text-[12px] text-slate-300 leading-relaxed max-h-16 overflow-y-auto pr-1">
                 {selectedTone.description}
               </p>
             </div>
 
             {/* Volume Control */}
             <div className="w-full mb-4 px-1">
-              <div className="flex justify-between items-center mb-1 text-[11px] font-sans text-slate-400">
+              <div className="flex justify-between items-center mb-1 text-[12px] font-sans text-slate-300">
                 <span className="flex items-center gap-1"><Volume2 className="w-3.5 h-3.5" /> Resonance Amplification</span>
                 <span className="font-mono">{Math.floor(volume * 100)}%</span>
               </div>

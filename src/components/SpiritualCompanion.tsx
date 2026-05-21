@@ -52,15 +52,34 @@ const DONATION_TIERS = [
   }
 ];
 
+const CHAT_HISTORY_STORAGE_KEY = "LUMINANOVA_CHAT_HISTORY_V1";
+
 export default function SpiritualCompanion() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      role: "model",
-      text: "Welcome, earnest traveler. I am your spiritual guide. In the silence of your heart, no question is trivial, and no doubt is a mistake. Tell me of your awakening symptoms, your meditative blocks, or ask me for a Koan to dismantle your mental boundaries.",
-      timestamp: new Date()
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const fallback = [
+      {
+        id: "welcome",
+        role: "model" as const,
+        text: "Welcome, earnest traveler. I am your spiritual guide. In the silence of your heart, no question is trivial, and no doubt is a mistake. Tell me of your awakening symptoms, your meditative blocks, or ask me for a Koan to dismantle your mental boundaries.",
+        timestamp: new Date(),
+      },
+    ];
+
+    try {
+      const raw = localStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
+      if (!raw) return fallback;
+
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed) || parsed.length === 0) return fallback;
+
+      return parsed.map((m: any) => ({
+        ...m,
+        timestamp: new Date(m.timestamp),
+      }));
+    } catch {
+      return fallback;
     }
-  ]);
+  });
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
@@ -111,6 +130,15 @@ export default function SpiritualCompanion() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    try {
+      const compactHistory = messages.slice(-80);
+      localStorage.setItem(CHAT_HISTORY_STORAGE_KEY, JSON.stringify(compactHistory));
+    } catch {
+      // no-op: persistence is best effort
+    }
+  }, [messages]);
 
   // Sync temp key state on tab change/load
   useEffect(() => {
@@ -193,7 +221,7 @@ export default function SpiritualCompanion() {
         const errorData = await response.json().catch(() => ({}));
         
         // Adjust error to hint about local API keys
-        if (response.status === 500 && !userApiKey.trim()) {
+        if ((response.status === 500 || response.status === 503) && !userApiKey.trim()) {
           throw new Error("Free server limits are saturated. Please add your own free Gemini API Key under 'Celestial Key' tab to establish standard connection.");
         }
         
@@ -288,7 +316,7 @@ export default function SpiritualCompanion() {
         <div className="w-full md:w-60 bg-black/60 md:border-r border-white/5 p-4 shrink-0 flex flex-col justify-between overflow-y-auto relative">
           <div className="space-y-4">
 
-            <p className="text-[10px] font-mono uppercase tracking-wider text-white/35">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-white/45 leading-relaxed">
               Start Here: choose an inquiry path, then use key or exchange if needed.
             </p>
             
@@ -336,9 +364,9 @@ export default function SpiritualCompanion() {
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-1.5 text-slate-300">
                   <Compass className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="font-serif text-xs font-semibold uppercase tracking-wider">Seek alignment</span>
+                  <span className="font-serif text-sm font-semibold uppercase tracking-wider">Seek alignment</span>
                 </div>
-                <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+                <p className="text-[11px] text-slate-300/90 leading-relaxed font-sans">
                   Choose a tailored path of inquiry to trigger instant thematic responses or symptom remedies.
                 </p>
                 <div className="space-y-1.5 max-h-45 md:max-h-none overflow-y-auto pr-1">
@@ -348,7 +376,7 @@ export default function SpiritualCompanion() {
                       key={idx}
                       onClick={() => handleSendMessage(query.text)}
                       disabled={isLoading}
-                      className="w-full text-left py-1.5 px-2.5 rounded-lg border border-white/5 bg-[#020205] hover:bg-white/5 text-[10px] text-slate-400 hover:text-indigo-300 transition-all cursor-pointer font-sans truncate block disabled:opacity-40"
+                      className="w-full text-left py-1.5 px-2.5 rounded-lg border border-white/5 bg-[#020205] hover:bg-white/5 text-[11px] text-slate-300 hover:text-indigo-200 transition-all cursor-pointer font-sans truncate block disabled:opacity-40"
                     >
                       {query.label}
                     </button>
@@ -362,16 +390,16 @@ export default function SpiritualCompanion() {
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-1.5 text-slate-300">
                   <Key className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="font-serif text-xs font-semibold uppercase tracking-wider">Celestial Key</span>
+                  <span className="font-serif text-sm font-semibold uppercase tracking-wider">Celestial Key</span>
                 </div>
-                <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
-                  Input your personal <strong className="text-indigo-300">Gemini Web API Key</strong> to chat without limits. This key is stored securely inside your local browser.
+                <p className="text-[11px] text-slate-300/90 leading-relaxed font-sans">
+                  Input your personal <strong className="text-indigo-200">Gemini Web API Key</strong> to chat without limits. Your key and message history are stored locally in this browser for continuity.
                 </p>
                 <a 
                   href="https://aistudio.google.com/apikey" 
                   target="_blank" 
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[9px] text-indigo-400 hover:text-indigo-300 font-mono tracking-wide"
+                  className="inline-flex items-center gap-1 text-[10px] text-indigo-300 hover:text-indigo-200 font-mono tracking-wide"
                 >
                   <span>GET FREE KEY FROM GOOGLE</span>
                   <ExternalLink className="w-2.5 h-2.5" />
@@ -384,13 +412,13 @@ export default function SpiritualCompanion() {
                     value={tempKeyInput}
                     onChange={(e) => setTempKeyInput(e.target.value)}
                     placeholder="Paste AI Studio Key (AIzaSy...)"
-                    className="w-full bg-[#020205] text-[#E5E7EB] rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] font-mono focus:outline-none focus:border-indigo-500/40 placeholder:text-slate-700"
+                    className="w-full bg-[#020205] text-[#E5E7EB] rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-mono focus:outline-none focus:border-indigo-500/40 placeholder:text-slate-500"
                   />
                   <div className="flex items-center gap-2">
                     <button
                       id="btn-save-custom-key"
                       onClick={handleSaveApiKey}
-                      className="flex-1 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-black text-center font-serif text-[10px] font-bold tracking-wider cursor-pointer active:scale-95 transition-all"
+                      className="flex-1 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-black text-center font-serif text-[11px] font-bold tracking-wider cursor-pointer active:scale-95 transition-all"
                     >
                       {userApiKey ? "Save Key Update" : "Confirm Key Connection"}
                     </button>
@@ -410,7 +438,7 @@ export default function SpiritualCompanion() {
                     )}
                   </div>
                   {isSavedSuccessfully && (
-                    <div className="flex items-center gap-1 text-[9px] text-emerald-400 font-sans mt-1">
+                    <div className="flex items-center gap-1 text-[10px] text-emerald-300 font-sans mt-1">
                       <CheckCircle2 className="w-3 h-3 shrink-0" />
                       <span>Key configuration saved!</span>
                     </div>
@@ -424,9 +452,9 @@ export default function SpiritualCompanion() {
               <div className="space-y-3 animate-fade-in">
                 <div className="flex items-center gap-1.5 text-slate-300">
                   <Coins className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="font-serif text-xs font-semibold uppercase tracking-wider">Sacred Exchange</span>
+                  <span className="font-serif text-sm font-semibold uppercase tracking-wider">Sacred Exchange</span>
                 </div>
-                <p className="text-[10px] text-slate-500 leading-relaxed font-sans">
+                <p className="text-[11px] text-slate-300/90 leading-relaxed font-sans">
                   Align energy, support server bills, and unlock unlimited messaging forever via an ethical, fixed-amount Stripe contribution.
                 </p>
 
@@ -448,7 +476,7 @@ export default function SpiritualCompanion() {
                         <span className="text-[10px] uppercase font-mono tracking-wider font-bold text-slate-300 group-hover:text-indigo-300">{tier.title}</span>
                         <span className="text-xs font-mono font-bold text-indigo-400">${tier.amount}</span>
                       </div>
-                      <p className="text-[9px] text-white/40 leading-snug group-hover:text-white/60">
+                      <p className="text-[10px] text-white/55 leading-snug group-hover:text-white/80">
                         {tier.icon} {tier.meaning}
                       </p>
                     </button>
@@ -461,7 +489,7 @@ export default function SpiritualCompanion() {
 
           {/* Dev/Reset indicator for sandbox testing */}
           <div className="pt-3 border-t border-white/5 mt-4 flex flex-col gap-1.5">
-            <div className="text-[9px] text-slate-700 font-mono italic select-none leading-relaxed">
+            <div className="text-[10px] text-slate-500 font-mono italic select-none leading-relaxed">
               &ldquo;Seek the seeker. Inside the silence, you are already complete.&rdquo;
             </div>
             
@@ -513,7 +541,7 @@ export default function SpiritualCompanion() {
 
           {/* Messages Feed */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 relative">
-            <div className="text-[9px] font-mono uppercase tracking-wider text-white/25">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-white/35">
               Scroll this console to reveal prior guidance.
             </div>
             {messages.map((m) => {
@@ -589,11 +617,11 @@ export default function SpiritualCompanion() {
 
             {/* Error alerts banner */}
             {errorStatus && (
-              <div className="flex items-start gap-2 text-rose-400 bg-rose-950/20 border border-rose-900 p-3 rounded-xl mx-2 text-xs">
+              <div className="flex items-start gap-2 text-rose-300 bg-rose-950/20 border border-rose-700 p-3 rounded-xl mx-2 text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <span className="font-semibold block">Cosmic Channel Error:</span>
-                  <p className="opacity-80 font-mono text-[10px]">{errorStatus}</p>
+                  <p className="opacity-90 font-mono text-[12px] leading-relaxed">{errorStatus}</p>
                 </div>
               </div>
             )}
