@@ -287,15 +287,6 @@ export default function SpiritualCompanion() {
     }, 2800);
   };
 
-  // Reset local state for testing limits easily
-  const resetLocalLimits = () => {
-    localStorage.removeItem("LUMINANOVA_DAILY_DATA");
-    localStorage.removeItem("LUMINANOVA_BLESSED");
-    setDailyCount(0);
-    setHasFreeAccessBlessing(false);
-    setErrorStatus(null);
-  };
-
   // Custom regex parsing for simple markdown representation (bold, lists, etc)
   const renderMessageContent = (text: string) => {
     return text.split("\n").map((line, i) => {
@@ -513,20 +504,11 @@ export default function SpiritualCompanion() {
 
           </div>
 
-          {/* Dev/Reset indicator for sandbox testing */}
+          {/* Sidebar footer quote */}
           <div className="pt-3 border-t border-white/5 mt-4 flex flex-col gap-1.5">
             <div className="text-[10px] text-slate-500 font-mono italic select-none leading-relaxed">
               &ldquo;Seek the seeker. Inside the silence, you are already complete.&rdquo;
             </div>
-            
-            <button
-              id="btn-reset-limits"
-              onClick={resetLocalLimits}
-              className="text-[8px] font-mono uppercase tracking-wider text-white/20 hover:text-indigo-400/90 text-left cursor-pointer select-none transition"
-              title="Reset client limits for easy review"
-            >
-              ⚙️ Reset client limit testing State
-            </button>
           </div>
 
           <div className="sticky bottom-0 mt-3 -mx-4 px-4 py-2 bg-linear-to-t from-[#020205] via-[#020205]/90 to-transparent text-center text-[9px] font-mono uppercase tracking-wider text-white/25 pointer-events-none">
