@@ -6,6 +6,7 @@ import AwakeningTechniques from "./components/AwakeningTechniques";
 import SpiritualCompanion from "./components/SpiritualCompanion";
 
 const ONBOARDING_DISMISSED_KEY = "LUMINANOVA_ONBOARDING_DISMISSED_V1";
+const SAGE_GUIDE_IMAGE_SRC = "/sage-guide.svg";
 
 type PortalTab = "matrix" | "sadhana" | "companion";
 
@@ -20,6 +21,12 @@ const TOUR_STEPS: TourStep[] = [
     title: "Welcome to the Sanctuary",
     summary:
       "This space is designed as a living practice flow. Move gently: tune resonance, enter a portal, then integrate what you receive.",
+  },
+  {
+    title: "Access Model: Free + BYOK",
+    summary:
+      "Every seeker receives 3 free interactions per day. This sanctuary is not subscription-based. For unlimited communion, use BYOK (Bring Your Own Key) with a free Gemini API key in the Celestial Key section.",
+    tab: "companion",
   },
   {
     title: "1) Silent Spirit + Resonance Deck",
@@ -94,6 +101,7 @@ export default function App() {
   const [dontShowAgain, setDontShowAgain] = useState<boolean>(() => {
     return localStorage.getItem(ONBOARDING_DISMISSED_KEY) === "true";
   });
+  const [showGuideImage, setShowGuideImage] = useState<boolean>(true);
 
   const portalConfig = {
     matrix: {
@@ -346,6 +354,17 @@ export default function App() {
             </div>
 
             <div className="px-5 py-4 space-y-4">
+              {showGuideImage && (
+                <div className="rounded-xl overflow-hidden border border-white/10 bg-black/30">
+                  <img
+                    src={SAGE_GUIDE_IMAGE_SRC}
+                    alt="Akashic Sage visual"
+                    className="w-full h-40 sm:h-48 object-cover"
+                    onError={() => setShowGuideImage(false)}
+                  />
+                </div>
+              )}
+
               <p className="text-sm text-slate-300 leading-relaxed">{activeTourStep.summary}</p>
 
               {activeTourTab && (
