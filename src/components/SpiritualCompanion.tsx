@@ -82,6 +82,9 @@ const DONATION_TIERS = [
 
 const CHAT_HISTORY_STORAGE_KEY = "LUMINANOVA_CHAT_HISTORY_V1";
 const JOURNEY_MILESTONES_STORAGE_KEY = "LUMINANOVA_JOURNEY_MILESTONES_V1";
+const GEMINI_KEY_LOCAL_STORAGE_KEY = "LUMINANOVA_GEMINI_KEY";
+const GEMINI_KEY_SESSION_STORAGE_KEY = "LUMINANOVA_GEMINI_KEY_SESSION";
+const GEMINI_KEY_MIGRATION_NOTICE_DISMISSED_KEY = "LUMINANOVA_KEY_MIGRATION_NOTICE_DISMISSED_V1";
 
 const DEFAULT_STRIPE_CHECKOUT_URLS: Record<string, string> = {
   "3.33": "https://buy.stripe.com/5kQaEQ2jv3WN0GZh12bEA07",
@@ -92,7 +95,7 @@ const DEFAULT_STRIPE_CHECKOUT_URLS: Record<string, string> = {
 const STRIPE_CHECKOUT_URLS: Record<string, string | undefined> = {
   "3.33": import.meta.env.VITE_STRIPE_CHECKOUT_333 || DEFAULT_STRIPE_CHECKOUT_URLS["3.33"],
   "7.77": import.meta.env.VITE_STRIPE_CHECKOUT_777 || DEFAULT_STRIPE_CHECKOUT_URLS["7.77"],
-  "8.88": import.meta.env.VITE_STRIPE_CHECKOUT_888 || DEFAULT_STRIPE_CHECKOUT_URLS["8.88"],
+    color: "from-blue-500/20 to-indigo-500/20 border-blue-500/30 text-blue-300"
 };
 
 const DISTRESS_KEYWORDS = [
@@ -161,9 +164,21 @@ export default function SpiritualCompanion() {
 
   // API Key States
   const [userApiKey, setUserApiKey] = useState<string>(() => {
-    return localStorage.getItem("LUMINANOVA_GEMINI_KEY") || "";
+    return (
+      sessionStorage.getItem(GEMINI_KEY_SESSION_STORAGE_KEY) ||
+      localStorage.getItem(GEMINI_KEY_LOCAL_STORAGE_KEY) ||
+      ""
+    );
+  });
+  const [rememberApiKey, setRememberApiKey] = useState<boolean>(() => {
+    return Boolean(localStorage.getItem(GEMINI_KEY_LOCAL_STORAGE_KEY));
   });
   const [tempKeyInput, setTempKeyInput] = useState("");
+  const [showKeyMigrationNotice, setShowKeyMigrationNotice] = useState<boolean>(() => {
+    const hasLegacyPersistedKey = Boolean(localStorage.getItem(GEMINI_KEY_LOCAL_STORAGE_KEY));
+    const wasDismissed = localStorage.getItem(GEMINI_KEY_MIGRATION_NOTICE_DISMISSED_KEY) === "true";
+    return hasLegacyPersistedKey && !wasDismissed;
+  });
 
   // Daily tracker state
   const [dailyCount, setDailyCount] = useState<number>(() => {
@@ -193,6 +208,22 @@ export default function SpiritualCompanion() {
   const [donorEmail, setDonorEmail] = useState("");
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
   const [showSageIntro, setShowSageIntro] = useState(false);
+
+  const keyStorageModeLabel = (() => {
+    const hasLocalKey = Boolean(localStorage.getItem(GEMINI_KEY_LOCAL_STORAGE_KEY));
+    const hasSessionKey = Boolean(sessionStorage.getItem(GEMINI_KEY_SESSION_STORAGE_KEY));
+
+    if (hasLocalKey) return "Persistent";
+    if (hasSessionKey) return "Session";
+    return "None";
+  })();
+  const nextSaveModeLabel = rememberApiKey ? "Persistent" : "Session";
+
+  const getStorageModeClass = (mode: "None" | "Session" | "Persistent") => {
+    if (mode === "Persistent") return "text-emerald-300";
+    if (mode === "Session") return "text-sky-300";
+    return "text-slate-400";
+  };
 
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const hasLiveCheckout = Boolean(
@@ -238,11 +269,18 @@ export default function SpiritualCompanion() {
     setUserApiKey(cleanKey);
     setErrorStatus(null);
     if (cleanKey) {
-      localStorage.setItem("LUMINANOVA_GEMINI_KEY", cleanKey);
+      if (rememberApiKey) {
+        localStorage.setItem(GEMINI_KEY_LOCAL_STORAGE_KEY, cleanKey);
+        sessionStorage.removeItem(GEMINI_KEY_SESSION_STORAGE_KEY);
+      } else {
+        sessionStorage.setItem(GEMINI_KEY_SESSION_STORAGE_KEY, cleanKey);
+        localStorage.removeItem(GEMINI_KEY_LOCAL_STORAGE_KEY);
+      }
       setIsSavedSuccessfully(true);
       setTimeout(() => setIsSavedSuccessfully(false), 3000);
     } else {
-      localStorage.removeItem("LUMINANOVA_GEMINI_KEY");
+      localStorage.removeItem(GEMINI_KEY_LOCAL_STORAGE_KEY);
+      sessionStorage.removeItem(GEMINI_KEY_SESSION_STORAGE_KEY);
       setIsSavedSuccessfully(true);
       setTimeout(() => setIsSavedSuccessfully(false), 3000);
     }
@@ -648,8 +686,25 @@ export default function SpiritualCompanion() {
                   <span className="font-serif text-sm font-semibold uppercase tracking-wider">Celestial Key</span>
                 </div>
                 <p className="text-[11px] text-slate-300/90 leading-relaxed font-sans">
-                  Input your personal <strong className="text-indigo-200">Gemini Web API Key</strong> to chat without limits. Your key and message history are stored locally in this browser for continuity.
+                  Input your personal <strong className="text-indigo-200">Gemini Web API Key</strong> to chat without limits. By default the key stays for this session only; enable remember if you want continuity across visits.
                 </p>
+                {showKeyMigrationNotice && (
+                  <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-2.5 text-[10px] text-amber-100 font-sans leading-relaxed">
+                    <p>
+                      Launch update: key handling is now session-first for safety. Since you already have a saved key, it remains available unless you remove it.
+                    </p>
+                    <button
+                      id="btn-dismiss-key-migration-note"
+                      onClick={() => {
+                        localStorage.setItem(GEMINI_KEY_MIGRATION_NOTICE_DISMISSED_KEY, "true");
+                        setShowKeyMigrationNotice(false);
+                      }}
+                      className="mt-2 text-[9px] font-mono uppercase tracking-wide text-amber-200 hover:text-amber-100 cursor-pointer"
+                    >
+                      Understood
+                    </button>
+                  </div>
+                )}
                 <a 
                   href="https://aistudio.google.com/apikey" 
                   target="_blank" 
@@ -669,6 +724,29 @@ export default function SpiritualCompanion() {
                     placeholder="Paste AI Studio Key (AIzaSy...)"
                     className="w-full bg-[#020205] text-[#E5E7EB] rounded-lg border border-white/10 px-2.5 py-1.5 text-[11px] font-mono focus:outline-none focus:border-indigo-500/40 placeholder:text-slate-500"
                   />
+                  <label className="inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-wide text-slate-400 cursor-pointer select-none">
+                    <input
+                      id="remember-gemini-key"
+                      type="checkbox"
+                      checked={rememberApiKey}
+                      onChange={(e) => setRememberApiKey(e.target.checked)}
+                      className="accent-indigo-500"
+                    />
+                    <span>Remember key on this device</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
+                    Keep me signed between visits on this browser. Leave unchecked for session-only usage.
+                  </p>
+                  <div className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-2 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wide">
+                      <span className="text-white/45">Current storage mode</span>
+                      <span className={getStorageModeClass(keyStorageModeLabel)}>{keyStorageModeLabel}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wide">
+                      <span className="text-white/45">On next save</span>
+                      <span className={getStorageModeClass(nextSaveModeLabel)}>{nextSaveModeLabel}</span>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
                     <button
                       id="btn-save-custom-key"
@@ -681,9 +759,11 @@ export default function SpiritualCompanion() {
                       <button
                         id="btn-forget-custom-key"
                         onClick={() => {
-                          localStorage.removeItem("LUMINANOVA_GEMINI_KEY");
+                          localStorage.removeItem(GEMINI_KEY_LOCAL_STORAGE_KEY);
+                          sessionStorage.removeItem(GEMINI_KEY_SESSION_STORAGE_KEY);
                           setUserApiKey("");
                           setTempKeyInput("");
+                          setRememberApiKey(false);
                         }}
                         className="p-1.5 rounded-lg bg-black hover:bg-neutral-800 border border-white/10 text-rose-400 text-xs text-center cursor-pointer font-serif"
                         title="Disconnect Key"
@@ -837,7 +917,7 @@ export default function SpiritualCompanion() {
 
             {/* If communal limit hit, render the inline suggestion dialog with paths */}
             {!userApiKey.trim() && !hasFreeAccessBlessing && dailyCount >= 3 && !isLoading && (
-              <div className="border border-indigo-500/10 bg-indigo-550/5 p-4 rounded-2xl border-dashed max-w-[85%] mr-auto space-y-3 shadow-2xl relative overflow-hidden backdrop-blur-sm">
+              <div className="border border-indigo-500/10 bg-indigo-500/5 p-4 rounded-2xl border-dashed max-w-[85%] mr-auto space-y-3 shadow-2xl relative overflow-hidden backdrop-blur-sm">
                 <div className="absolute -top-2.5 -right-2.5 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
                 
                 <div className="flex gap-2">

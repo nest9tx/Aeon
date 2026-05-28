@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkles, Compass, HelpCircle, Activity, Heart, RefreshCw, Feather } from "lucide-react";
 import SolfeggioTones from "./components/SolfeggioTones";
 import SacredGeometryViewer from "./components/SacredGeometry";
@@ -102,6 +102,8 @@ export default function App() {
     return localStorage.getItem(ONBOARDING_DISMISSED_KEY) === "true";
   });
   const [showGuideImage, setShowGuideImage] = useState<boolean>(true);
+  const quoteTimeoutRef = useRef<number | null>(null);
+  const frequencyOverrideTimeoutRef = useRef<number | null>(null);
 
   const portalConfig = {
     matrix: {
@@ -122,8 +124,11 @@ export default function App() {
 
   // Automatic randomized quote cycle or manual triggers
   const triggerNextQuote = () => {
+    if (quoteTimeoutRef.current) {
+      window.clearTimeout(quoteTimeoutRef.current);
+    }
     setFadeQuote(true);
-    setTimeout(() => {
+    quoteTimeoutRef.current = window.setTimeout(() => {
       setQuoteIndex((prev) => (prev + 1) % AWAKENING_QUOTES.length);
       setFadeQuote(false);
     }, 450);
@@ -142,10 +147,24 @@ export default function App() {
     setToneColor(color);
     
     // Clear override after a brief moment to allow further changes
-    setTimeout(() => {
+    if (frequencyOverrideTimeoutRef.current) {
+      window.clearTimeout(frequencyOverrideTimeoutRef.current);
+    }
+    frequencyOverrideTimeoutRef.current = window.setTimeout(() => {
       setFrequencyOverride(undefined);
     }, 200);
   };
+
+  useEffect(() => {
+    return () => {
+      if (quoteTimeoutRef.current) {
+        window.clearTimeout(quoteTimeoutRef.current);
+      }
+      if (frequencyOverrideTimeoutRef.current) {
+        window.clearTimeout(frequencyOverrideTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const closeTour = () => {
     if (dontShowAgain) {

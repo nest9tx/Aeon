@@ -59,7 +59,7 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
   
   // Interaction variables
   const rotationAngle = useRef<number>(0);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0, isHovered: false });
+  const mousePosRef = useRef({ x: 0, y: 0, isHovered: false });
 
   // Resolve active drawing color
   const getActiveColor = () => {
@@ -165,8 +165,8 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
       ctx.restore();
 
       // Draw Cursor Aura overlay on top (non-rotated space)
-      if (mousePos.isHovered) {
-        drawCursorAura(ctx, activeColor);
+      if (mousePosRef.current.isHovered) {
+        drawCursorAura(ctx, activeColor, mousePosRef.current);
       }
 
       animationFrameId.current = requestAnimationFrame(render);
@@ -179,7 +179,7 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [selectedGeo, rotationSpeed, lineThickness, colorTheme, renderScale, breathingScale, mousePos, showCircles, externalColor]);
+  }, [selectedGeo, rotationSpeed, lineThickness, colorTheme, renderScale, breathingScale, showCircles, externalColor]);
 
   // Geometric Drawing Methods
 
@@ -490,7 +490,11 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
     ctx.restore();
   };
 
-  const drawCursorAura = (ctx: CanvasRenderingContext2D, activeColor: string) => {
+  const drawCursorAura = (
+    ctx: CanvasRenderingContext2D,
+    activeColor: string,
+    mousePos: { x: number; y: number; isHovered: boolean }
+  ) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -527,15 +531,15 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    setMousePos({
+    mousePosRef.current = {
       x: e.clientX,
       y: e.clientY,
       isHovered: true,
-    });
+    };
   };
 
   const handleMouseLeave = () => {
-    setMousePos(prev => ({ ...prev, isHovered: false }));
+    mousePosRef.current = { ...mousePosRef.current, isHovered: false };
   };
 
   return (
@@ -619,7 +623,7 @@ export default function SacredGeometryViewer({ externalColor = "#ca8a04", breath
                     id={`geo-btn-${geo.id}`}
                     key={geo.id}
                     onClick={() => setSelectedGeo(geo)}
-                    className={`w-full text-left py-1.5 px-3 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition-all duration-300 ${
+                    className={`group w-full text-left py-1.5 px-3 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition-all duration-300 ${
                       geo.id === selectedGeo.id 
                         ? "border-indigo-500/40 bg-indigo-500/10 text-indigo-200 font-serif font-medium" 
                         : "border-white/5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-slate-200"
