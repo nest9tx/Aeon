@@ -998,7 +998,12 @@ export default function SpiritualCompanion() {
           </div>
 
           {/* User Input Frame */}
-          <div className="p-3 bg-[#020205] border-t border-white/5">
+          <div className="p-3 border-t border-indigo-500/20 bg-linear-to-t from-[#04050c] via-[#03040a] to-[#020205] shadow-[0_-10px_30px_rgba(0,0,0,0.35)]">
+            <div className="mb-2 rounded-lg border border-indigo-500/25 bg-indigo-500/10 px-2 py-1.5 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-mono uppercase tracking-wider text-indigo-200/90">Communion Thread</span>
+              <span className="text-[9px] font-mono uppercase tracking-wider text-white/45">Compose and transmit</span>
+            </div>
+
             <div className="mb-2 px-1 py-1.5 rounded-lg border border-emerald-500/10 bg-emerald-500/5 text-[9px] text-emerald-200/90 font-sans leading-relaxed">
               Sage supports spiritual reflection and practical grounding. If you are in immediate danger or considering self-harm, contact local emergency services or a crisis hotline now.
             </div>
@@ -1013,7 +1018,7 @@ export default function SpiritualCompanion() {
               <span>Current Response Tone: {currentTone.label}</span>
               <span className="text-indigo-300/80">Refine in Inquire tab</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-xl border border-indigo-500/25 bg-black/45 p-2 shadow-[0_0_18px_rgba(79,70,229,0.08)]">
               <input
                 id="companion-chat-input"
                 type="text"
@@ -1026,13 +1031,13 @@ export default function SpiritualCompanion() {
                     ? "Communion limited today. Provide key or support exchange above..." 
                     : "Ask of the Self, query symptoms, or type 'I require a Koan'..."
                 }
-                className="flex-1 bg-black/40 text-slate-200 rounded-xl border border-white/5 px-3.5 py-2 text-xs focus:outline-none focus:border-indigo-500/40 transition-colors placeholder:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#090b15] text-slate-100 rounded-xl border border-indigo-500/30 px-3.5 py-2.5 text-xs focus:outline-none focus:border-indigo-400 focus:shadow-[0_0_0_1px_rgba(99,102,241,0.25)] transition-colors placeholder:text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"
               />
               <button
                 id="btn-send-guidance-query"
                 onClick={() => handleSendMessage()}
                 disabled={isLoading || !inputMessage.trim() || (!userApiKey.trim() && !hasFreeAccessBlessing && dailyCount >= 3)}
-                className="w-10 h-10 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-black flex items-center justify-center transition shrink-0 cursor-pointer disabled:opacity-20 active:scale-95"
+                className="w-10 h-10 rounded-xl bg-indigo-500 hover:bg-indigo-400 text-black flex items-center justify-center transition shrink-0 cursor-pointer disabled:opacity-20 active:scale-95 shadow-[0_0_15px_rgba(99,102,241,0.35)]"
                 title="Transmit Query"
               >
                 <Send className="w-4 h-4" />

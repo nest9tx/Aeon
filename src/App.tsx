@@ -13,6 +13,7 @@ type PortalTab = "matrix" | "sadhana" | "companion";
 type TourStep = {
   title: string;
   summary: string;
+  microPractice?: string;
   tab?: PortalTab;
 };
 
@@ -21,29 +22,34 @@ const TOUR_STEPS: TourStep[] = [
     title: "Welcome to the Sanctuary",
     summary:
       "This space is designed as a living practice flow. Move gently: tune resonance, enter a portal, then integrate what you receive.",
+    microPractice: "Take one slower breath than usual, then choose the portal that matches your current need.",
   },
   {
     title: "Access Model: Free + BYOK",
     summary:
       "Every seeker receives 3 free interactions per day. This sanctuary is not subscription-based. For unlimited communion, use BYOK (Bring Your Own Key) with a free Gemini API key in the Celestial Key section.",
+    microPractice: "If you plan to return often, open the Celestial Key panel and set your preferred storage mode before beginning.",
     tab: "companion",
   },
   {
     title: "1) Silent Spirit + Resonance Deck",
     summary:
       "Begin with a Solfeggio tone on the left. Let the frequency settle your nervous system before moving into deeper practice.",
+    microPractice: "Choose one frequency and stay with it for 60-90 seconds before switching tabs.",
     tab: "matrix",
   },
   {
     title: "2) Guided Sadhana Portal",
     summary:
       "Use breath, chakra focus, and practical inner-work prompts. This is the structured pathway when your energy needs form.",
+    microPractice: "Run one complete breath cycle, then sync one chakra frequency to anchor your next step.",
     tab: "sadhana",
   },
   {
     title: "3) Akashic Sage Companion",
     summary:
       "Ask direct questions, use response tones, and run grounding or integration tools. Contributions help keep Sage accessible to all seekers.",
+    microPractice: "Ask one clear question in one sentence, then generate an Integration Summary before ending your session.",
     tab: "companion",
   },
 ];
@@ -186,6 +192,12 @@ export default function App() {
       return;
     }
     closeTour();
+  };
+
+  const handleTourBack = () => {
+    if (tourStepIndex > 0) {
+      setTourStepIndex((prev) => prev - 1);
+    }
   };
 
   const activeTourStep = TOUR_STEPS[tourStepIndex];
@@ -386,6 +398,13 @@ export default function App() {
 
               <p className="text-sm text-slate-300 leading-relaxed">{activeTourStep.summary}</p>
 
+              {activeTourStep.microPractice && (
+                <div className="rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-3 py-2">
+                  <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-300/90 mb-1">Practice Now</p>
+                  <p className="text-xs text-emerald-100/90 leading-relaxed">{activeTourStep.microPractice}</p>
+                </div>
+              )}
+
               {activeTourTab && (
                 <button
                   id={`btn-tour-jump-${activeTourTab}`}
@@ -420,6 +439,14 @@ export default function App() {
 
               <div className="flex items-center justify-end gap-2">
                 <button
+                  id="btn-tour-back"
+                  onClick={handleTourBack}
+                  disabled={tourStepIndex === 0}
+                  className="px-3 py-1.5 rounded-lg border border-white/15 text-slate-300 text-xs font-mono uppercase tracking-wide hover:bg-white/5 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Back
+                </button>
+                <button
                   id="btn-tour-skip"
                   onClick={closeTour}
                   className="px-3 py-1.5 rounded-lg border border-white/15 text-slate-300 text-xs font-mono uppercase tracking-wide hover:bg-white/5 transition cursor-pointer"
@@ -431,7 +458,7 @@ export default function App() {
                   onClick={handleTourNext}
                   className="px-3 py-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-black text-xs font-mono uppercase tracking-wide font-bold transition cursor-pointer"
                 >
-                  {tourStepIndex === TOUR_STEPS.length - 1 ? "Finish" : "Next"}
+                  {tourStepIndex === TOUR_STEPS.length - 1 ? "Finish Walkthrough" : "Next"}
                 </button>
               </div>
             </div>
