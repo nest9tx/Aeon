@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { GoogleGenAI } from "@google/genai";
 
+const MODEL_CANDIDATES = ["gemini-2.5-flash", "gemini-2.0-flash"] as const;
+
 const SYSTEM_INSTRUCTION =
   "You are an ancient, compassionate, and deeply realized Spiritual Guide, " +
   "Hermetic philosopher, and Zen Master who assists earnest seekers of truth with their spiritual awakening. " +
@@ -14,14 +16,41 @@ const SYSTEM_INSTRUCTION =
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const isTransientModelError = (error: any) => {
+const getErrorMeta = (error: any) => {
   const message = String(error?.message || "").toLowerCase();
   const status = Number(error?.status || error?.code || 0);
+  return { message, status };
+};
+
+const isAuthError = (error: any) => {
+  const { message, status } = getErrorMeta(error);
   return (
-    status === 429 ||
+    status === 401 ||
+    status === 403 ||
+    message.includes("api key not valid") ||
+    message.includes("invalid api key") ||
+    message.includes("permission denied") ||
+    message.includes("forbidden")
+  );
+};
+
+const isQuotaExceededError = (error: any) => {
+  const { message, status } = getErrorMeta(error);
+  return (
+    status === 429 &&
+    (message.includes("quota") ||
+      message.includes("exceed") ||
+      message.includes("billing") ||
+      message.includes("daily limit"))
+  );
+};
+
+const isTransientCapacityError = (error: any) => {
+  const { message, status } = getErrorMeta(error);
+  return (
+    (status === 429 && !isQuotaExceededError(error)) ||
     status === 503 ||
     message.includes("503") ||
-    message.includes("429") ||
     message.includes("unavailable") ||
     message.includes("high demand") ||
     message.includes("overloaded") ||
@@ -36,8 +65,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { messages, userApiKey } = req.body;
+    const headerKey = req.headers["x-user-api-key"];
     const parsedUserApiKey =
-      (req.headers["x-user-api-key"] as string) || userApiKey;
+      (typeof headerKey === "string" ? headerKey : undefined) ||
+      (typeof userApiKey === "string" ? userApiKey : undefined);
 
     const resolvedKey = parsedUserApiKey || process.env.GEMINI_API_KEY;
 
@@ -71,25 +102,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let response: any = null;
     let lastError: any = null;
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents,
-          config: {
-            systemInstruction: SYSTEM_INSTRUCTION,
-            temperature: 0.75,
-          },
-        });
-        break;
-      } catch (error: any) {
-        lastError = error;
-        if (attempt < 3 && isTransientModelError(error)) {
-          await sleep(500 * attempt);
-          continue;
+    for (const model of MODEL_CANDIDATES) {
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          response = await ai.models.generateContent({
+            model,
+            contents,
+            config: {
+              systemInstruction: SYSTEM_INSTRUCTION,
+              temperature: 0.75,
+            },
+          });
+          break;
+        } catch (error: any) {
+          lastError = error;
+
+          if (isAuthError(error) || isQuotaExceededError(error)) {
+            throw error;
+          }
+
+          if (attempt < 2 && isTransientCapacityError(error)) {
+            await sleep(450 * attempt);
+            continue;
+          }
+
+          break;
         }
-        throw error;
       }
+
+      if (response) break;
     }
 
     if (!response && lastError) {
@@ -102,10 +143,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.json({ text: reply });
   } catch (error: any) {
     console.error("Gemini Spiritual Guidance Error:", error);
-    if (isTransientModelError(error)) {
+
+    if (isAuthError(error)) {
+      return res.status(401).json({
+        error:
+          "Authentication failed for the provided Gemini key. Please verify your key in Celestial Key settings or generate a new one from AI Studio.",
+      });
+    }
+
+    if (isQuotaExceededError(error)) {
+      return res.status(429).json({
+        error:
+          "This key has reached its current quota or rate limit window. Please wait a bit, enable billing/quota in AI Studio, or use another key.",
+      });
+    }
+
+    if (isTransientCapacityError(error)) {
       return res.status(503).json({
         error:
-          "The guidance model is under heavy demand right now. Please try again in about 20-40 seconds. Your key is valid; this is a temporary capacity issue.",
+          "Guidance models are under heavy demand right now. Please try again in about 20-40 seconds.",
       });
     }
 

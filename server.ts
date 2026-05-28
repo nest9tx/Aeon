@@ -6,6 +6,63 @@ import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
+const MODEL_CANDIDATES = ["gemini-2.5-flash", "gemini-2.0-flash"] as const;
+
+const SYSTEM_INSTRUCTION =
+  "You are an ancient, compassionate, and deeply realized Spiritual Guide, " +
+  "Hermetic philosopher, and Zen Master who assists earnest seekers of truth with their spiritual awakening. " +
+  "Provide elegant, wise, and kind answers grounded in non-duality (Advaita Vedanta, Zen, Taoism, Mysticism). " +
+  "Encourage self-inquiry ('Who is experiencing this?'), breathing, and tuning into Solfeggio acoustic tones. " +
+  "Address spiritual emergence symptoms (dark night of the soul, energy sensations, ego dissolution) " +
+  "with immense reassurance, practical grounding advice (like walking, eating root vegetables, cold water), " +
+  "and clear metaphors. Avoid any robotic disclaimer-like language (like 'I am an AI, consult a doctor'), " +
+  "but speak as a true spiritual friend (Kalyana-mitra) with serene authority. Keep answers reasonably brief, " +
+  "poetic, and deeply spiritual.";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getErrorMeta = (error: any) => {
+  const message = String(error?.message || "").toLowerCase();
+  const status = Number(error?.status || error?.code || 0);
+  return { message, status };
+};
+
+const isAuthError = (error: any) => {
+  const { message, status } = getErrorMeta(error);
+  return (
+    status === 401 ||
+    status === 403 ||
+    message.includes("api key not valid") ||
+    message.includes("invalid api key") ||
+    message.includes("permission denied") ||
+    message.includes("forbidden")
+  );
+};
+
+const isQuotaExceededError = (error: any) => {
+  const { message, status } = getErrorMeta(error);
+  return (
+    status === 429 &&
+    (message.includes("quota") ||
+      message.includes("exceed") ||
+      message.includes("billing") ||
+      message.includes("daily limit"))
+  );
+};
+
+const isTransientCapacityError = (error: any) => {
+  const { message, status } = getErrorMeta(error);
+  return (
+    (status === 429 && !isQuotaExceededError(error)) ||
+    status === 503 ||
+    message.includes("503") ||
+    message.includes("unavailable") ||
+    message.includes("high demand") ||
+    message.includes("overloaded") ||
+    message.includes("temporarily")
+  );
+};
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -30,7 +87,10 @@ async function startServer() {
   app.post("/api/spiritual-guidance", async (req, res): Promise<any> => {
     try {
       const { messages, userApiKey } = req.body;
-      const parsedUserApiKey = req.headers["x-user-api-key"] || userApiKey;
+      const headerKey = req.headers["x-user-api-key"];
+      const parsedUserApiKey =
+        (typeof headerKey === "string" ? headerKey : undefined) ||
+        (typeof userApiKey === "string" ? userApiKey : undefined);
 
       let activeAi = ai;
 
@@ -61,30 +121,70 @@ async function startServer() {
         parts: [{ text: m.text }],
       }));
 
-      const systemInstruction = 
-        "You are an ancient, compassionate, and deeply realized Spiritual Guide, " +
-        "Hermetic philosopher, and Zen Master who assists earnest seekers of truth with their spiritual awakening. " +
-        "Provide elegant, wise, and kind answers grounded in non-duality (Advaita Vedanta, Zen, Taoism, Mysticism). " +
-        "Encourage self-inquiry ('Who is experiencing this?'), breathing, and tuning into Solfeggio acoustic tones. " +
-        "Address spiritual emergence symptoms (dark night of the soul, energy sensations, ego dissolution) " +
-        "with immense reassurance, practical grounding advice (like walking, eating root vegetables, cold water), " +
-        "and clear metaphors. Avoid any robotic disclaimer-like language (like 'I am an AI, consult a doctor'), " +
-        "but speak as a true spiritual friend (Kalyana-mitra) with serene authority. Keep answers reasonably brief, " +
-        "poetic, and deeply spiritual.";
+      let response: any = null;
+      let lastError: any = null;
 
-      const response = await activeAi.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: contents,
-        config: {
-          systemInstruction,
-          temperature: 0.75,
-        },
-      });
+      for (const model of MODEL_CANDIDATES) {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            response = await activeAi.models.generateContent({
+              model,
+              contents,
+              config: {
+                systemInstruction: SYSTEM_INSTRUCTION,
+                temperature: 0.75,
+              },
+            });
+            break;
+          } catch (error: any) {
+            lastError = error;
+
+            if (isAuthError(error) || isQuotaExceededError(error)) {
+              throw error;
+            }
+
+            if (attempt < 2 && isTransientCapacityError(error)) {
+              await sleep(450 * attempt);
+              continue;
+            }
+
+            break;
+          }
+        }
+
+        if (response) break;
+      }
+
+      if (!response && lastError) {
+        throw lastError;
+      }
 
       const reply = response.text || "Remain in silent awareness. The mind is currently empty.";
       res.json({ text: reply });
     } catch (error: any) {
       console.error("Gemini Spiritual Guidance Error:", error);
+
+      if (isAuthError(error)) {
+        return res.status(401).json({
+          error:
+            "Authentication failed for the provided Gemini key. Please verify your key in Celestial Key settings or generate a new one from AI Studio.",
+        });
+      }
+
+      if (isQuotaExceededError(error)) {
+        return res.status(429).json({
+          error:
+            "This key has reached its current quota or rate limit window. Please wait a bit, enable billing/quota in AI Studio, or use another key.",
+        });
+      }
+
+      if (isTransientCapacityError(error)) {
+        return res.status(503).json({
+          error:
+            "Guidance models are under heavy demand right now. Please try again in about 20-40 seconds.",
+        });
+      }
+
       res.status(500).json({
         error: error.message || "An error occurred while seeking guidance from the Cosmos.",
       });
