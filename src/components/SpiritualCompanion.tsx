@@ -56,13 +56,16 @@ type ResponseToneId = (typeof RESPONSE_TONES)[number]["id"];
 const GROUNDING_PROTOCOL_PROMPT =
   "Guide me through a focused 90-second grounding protocol for overwhelm: 3 breaths, 3 body anchors, 1 simple action, and one closing affirmation.";
 
+const STARTER_ROUTE_PROMPT =
+  "I don't know where to begin. Please guide me with a gentle 3-step start for this moment: one breath, one question, and one tiny grounded action.";
+
 const DONATION_TIERS = [
   { 
     amount: "3.33", 
     title: "Trinity Resonance", 
     meaning: "The number of integration & communication. Stabilizes basic connection channels & keeps server lamps lit.", 
     icon: "✨",
-    color: "from-blue-500/20 to-indigo-505/20 border-blue-500/30 text-blue-300"
+    color: "from-blue-500/20 to-indigo-500/20 border-blue-500/30 text-blue-300"
   },
   { 
     amount: "7.77", 
@@ -95,7 +98,7 @@ const DEFAULT_STRIPE_CHECKOUT_URLS: Record<string, string> = {
 const STRIPE_CHECKOUT_URLS: Record<string, string | undefined> = {
   "3.33": import.meta.env.VITE_STRIPE_CHECKOUT_333 || DEFAULT_STRIPE_CHECKOUT_URLS["3.33"],
   "7.77": import.meta.env.VITE_STRIPE_CHECKOUT_777 || DEFAULT_STRIPE_CHECKOUT_URLS["7.77"],
-    color: "from-blue-500/20 to-indigo-500/20 border-blue-500/30 text-blue-300"
+  "8.88": import.meta.env.VITE_STRIPE_CHECKOUT_888 || DEFAULT_STRIPE_CHECKOUT_URLS["8.88"],
 };
 
 const DISTRESS_KEYWORDS = [
@@ -208,6 +211,7 @@ export default function SpiritualCompanion() {
   const [donorEmail, setDonorEmail] = useState("");
   const [isSavedSuccessfully, setIsSavedSuccessfully] = useState(false);
   const [showSageIntro, setShowSageIntro] = useState(false);
+  const [showPostRitualPrompt, setShowPostRitualPrompt] = useState(false);
 
   const keyStorageModeLabel = (() => {
     const hasLocalKey = Boolean(localStorage.getItem(GEMINI_KEY_LOCAL_STORAGE_KEY));
@@ -327,6 +331,73 @@ export default function SpiritualCompanion() {
     handleSendMessage(GROUNDING_PROTOCOL_PROMPT);
   };
 
+  const handleStartFromStillness = () => {
+    pushMilestone("Used beginner entry path", "first-contact");
+    handleSendMessage(STARTER_ROUTE_PROMPT);
+  };
+
+  const appendCompanionMessage = (
+    text: string,
+    milestoneLabel?: string,
+    milestoneKind: JourneyMilestone["kind"] = "integration"
+  ) => {
+    const guideMessage: Message = {
+      id: Math.random().toString(),
+      role: "model",
+      text,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, guideMessage]);
+    if (milestoneLabel) {
+      pushMilestone(milestoneLabel, milestoneKind);
+    }
+  };
+
+  const handleSensoryGrounding = () => {
+    appendCompanionMessage(
+      [
+        "**5-4-3-2-1 Reset**",
+        "- Name 5 things you can see.",
+        "- Name 4 things you can feel against your skin.",
+        "- Name 3 things you can hear right now.",
+        "- Name 2 things you can smell.",
+        "- Name 1 thing you can taste.",
+        "- Close with one sentence: I am here, and I am safe in this moment.",
+      ].join("\n"),
+      "Completed a 5-4-3-2-1 grounding reset",
+      "grounding"
+    );
+  };
+
+  const handleTwoMinuteBodyScan = () => {
+    appendCompanionMessage(
+      [
+        "**2-Minute Body Scan**",
+        "- Inhale for 4, exhale for 6, three times.",
+        "- Relax jaw, shoulders, chest, belly, and hands.",
+        "- Ask: Where is the strongest sensation right now?",
+        "- Place one palm there for 20 seconds.",
+        "- Close with: I can soften and still remain present.",
+      ].join("\n"),
+      "Completed a 2-minute body scan",
+      "grounding"
+    );
+  };
+
+  const handleClarityRitual = () => {
+    appendCompanionMessage(
+      [
+        "**Clarity Ritual**",
+        "- What am I feeling right now? (one word)",
+        "- What do I need most right now? (one sentence)",
+        "- What is one tiny next action I can do in 5 minutes?",
+        "- Commit: I will do this before opening another tab.",
+      ].join("\n"),
+      "Completed a clarity ritual",
+      "insight"
+    );
+  };
+
   const buildIntegrationSummary = () => {
     const recentUserMessages = messages.filter((m) => m.role === "user").slice(-3);
     const latestUserText = recentUserMessages[recentUserMessages.length - 1]?.text || "I am listening inwardly.";
@@ -379,9 +450,44 @@ export default function SpiritualCompanion() {
       .map(([word]) => word);
   };
 
+  const handleCloseSessionRitual = () => {
+    const themes = getTopThemes();
+    const themeLine = themes.length > 0 ? themes.join(", ") : "presence, breath, integration";
+
+    appendCompanionMessage(
+      [
+        "**Session Closing Ritual**",
+        "- Witnessed themes: " + themeLine,
+        "- Place both feet on the ground and take 3 slower exhales.",
+        "- Name one thing you are grateful for in this exact moment.",
+        "- Choose one tiny next action and complete it before returning online.",
+        "- Closing anchor: I leave this sanctuary more grounded than I arrived.",
+      ].join("\n"),
+    );
+
+    setShowPostRitualPrompt(true);
+  };
+
+  const handleSaveRitualMilestone = () => {
+    pushMilestone("Closed with session ritual", "integration");
+    setShowPostRitualPrompt(false);
+    appendCompanionMessage(
+      "**Milestone saved.** Your closing ritual has been sealed into your journey timeline.",
+      undefined,
+      "integration"
+    );
+  };
+
+  const handleBeginNewCycle = () => {
+    setShowPostRitualPrompt(false);
+    setInputMessage("I am ready to begin a new cycle with clarity. Guide my first step.");
+  };
+
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || inputMessage;
     if (!textToSend.trim() || isLoading) return;
+
+    setShowPostRitualPrompt(false);
 
     // Checks context limit
     const bypassLimit = !!userApiKey.trim() || hasFreeAccessBlessing;
@@ -531,6 +637,7 @@ export default function SpiritualCompanion() {
   const remainingChats = hasFreeAccessBlessing || userApiKey.trim() ? "∞" : Math.max(0, 3 - dailyCount);
   const currentTone = RESPONSE_TONES.find((tone) => tone.id === responseTone) || RESPONSE_TONES[0];
   const topThemes = getTopThemes();
+  const userMessageCount = messages.filter((m) => m.role === "user").length;
   const shouldShowDistressSupport = DISTRESS_KEYWORDS.some((keyword) =>
     inputMessage.toLowerCase().includes(keyword)
   );
@@ -644,6 +751,31 @@ export default function SpiritualCompanion() {
                     className="w-full text-left py-2 px-2.5 rounded-lg border border-white/10 bg-black/40 hover:bg-white/5 text-[11px] text-slate-300 hover:text-indigo-200 transition-all cursor-pointer font-sans disabled:opacity-40"
                   >
                     Create Integration Summary
+                  </button>
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-black/35 p-2.5 space-y-1.5">
+                  <p className="text-[10px] text-white/60 font-mono uppercase tracking-wide">Seeker Essentials (Instant)</p>
+                  <button
+                    id="btn-sensory-grounding"
+                    onClick={handleSensoryGrounding}
+                    className="w-full text-left py-2 px-2.5 rounded-lg border border-sky-500/20 bg-sky-500/10 hover:bg-sky-500/15 text-[11px] text-sky-200 transition-all cursor-pointer font-sans"
+                  >
+                    5-4-3-2-1 Sensory Reset
+                  </button>
+                  <button
+                    id="btn-body-scan"
+                    onClick={handleTwoMinuteBodyScan}
+                    className="w-full text-left py-2 px-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 hover:bg-emerald-500/15 text-[11px] text-emerald-200 transition-all cursor-pointer font-sans"
+                  >
+                    2-Minute Body Scan
+                  </button>
+                  <button
+                    id="btn-clarity-ritual"
+                    onClick={handleClarityRitual}
+                    className="w-full text-left py-2 px-2.5 rounded-lg border border-indigo-500/20 bg-indigo-500/10 hover:bg-indigo-500/15 text-[11px] text-indigo-200 transition-all cursor-pointer font-sans"
+                  >
+                    Clarity Ritual (One Next Step)
                   </button>
                 </div>
 
@@ -909,6 +1041,32 @@ export default function SpiritualCompanion() {
             <div className="text-[10px] font-mono uppercase tracking-wider text-white/35">
               Scroll this console to reveal prior guidance.
             </div>
+
+            {userMessageCount === 0 && !isLoading && (
+              <div className="max-w-[85%] mr-auto rounded-2xl border border-indigo-500/20 bg-indigo-500/8 p-3 space-y-2">
+                <p className="text-[10px] font-mono uppercase tracking-wide text-indigo-200">New Here</p>
+                <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                  Begin gently. Choose one path below and Sage will guide your first 30 seconds.
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    id="btn-starter-unknown"
+                    onClick={handleStartFromStillness}
+                    className="px-2.5 py-1 rounded-lg border border-indigo-500/25 bg-indigo-500/15 hover:bg-indigo-500/20 text-[10px] text-indigo-100 transition cursor-pointer font-sans"
+                  >
+                    I Don&apos;t Know Where To Begin
+                  </button>
+                  <button
+                    id="btn-starter-ground"
+                    onClick={handleGroundingProtocol}
+                    className="px-2.5 py-1 rounded-lg border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/15 text-[10px] text-emerald-200 transition cursor-pointer font-sans"
+                  >
+                    Ground Me First
+                  </button>
+                </div>
+              </div>
+            )}
+
             {messages.map((m) => {
               const isSelf = m.role === "user";
               return (
@@ -1018,6 +1176,60 @@ export default function SpiritualCompanion() {
               <span>Current Response Tone: {currentTone.label}</span>
               <span className="text-indigo-300/80">Refine in Inquire tab</span>
             </div>
+
+            <div className="mb-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-mono uppercase tracking-wider text-white/50">Session Closure</span>
+              <button
+                id="btn-close-session-ritual"
+                onClick={handleCloseSessionRitual}
+                className="px-2 py-1 rounded-md border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/15 text-[9px] font-mono uppercase tracking-wide text-amber-200 cursor-pointer"
+              >
+                Close With Ritual
+              </button>
+            </div>
+
+            {showPostRitualPrompt && (
+              <div className="mb-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 space-y-2">
+                <p className="text-[10px] text-amber-100 font-sans leading-relaxed">
+                  Ritual complete. Would you like to save this closing as a milestone, or begin a new cycle now?
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    id="btn-save-ritual-milestone"
+                    onClick={handleSaveRitualMilestone}
+                    className="px-2.5 py-1 rounded-md border border-amber-500/35 bg-amber-500/15 hover:bg-amber-500/20 text-[9px] font-mono uppercase tracking-wide text-amber-100 cursor-pointer"
+                  >
+                    Save As Milestone
+                  </button>
+                  <button
+                    id="btn-begin-new-cycle"
+                    onClick={handleBeginNewCycle}
+                    className="px-2.5 py-1 rounded-md border border-indigo-500/30 bg-indigo-500/12 hover:bg-indigo-500/18 text-[9px] font-mono uppercase tracking-wide text-indigo-100 cursor-pointer"
+                  >
+                    Begin New Cycle
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {[
+                { id: "overwhelmed", label: "I Feel Overwhelmed", text: "I feel overwhelmed. Please guide me with one tiny step and one breath anchor." },
+                { id: "clarity", label: "I Need Clarity", text: "Help me simplify my current inner conflict into one clear insight and one practical action." },
+                { id: "integrate", label: "Help Me Integrate", text: "Please help me integrate today's experience into a grounded closing ritual." },
+              ].map((chip) => (
+                <button
+                  id={`btn-quick-intent-${chip.id}`}
+                  key={chip.id}
+                  onClick={() => handleSendMessage(chip.text)}
+                  disabled={isLoading}
+                  className="px-2.5 py-1 rounded-lg border border-white/12 bg-black/35 hover:bg-white/8 text-[10px] text-slate-300 hover:text-indigo-200 transition cursor-pointer font-sans disabled:opacity-40"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-center gap-2 rounded-xl border border-indigo-500/25 bg-black/45 p-2 shadow-[0_0_18px_rgba(79,70,229,0.08)]">
               <input
                 id="companion-chat-input"
