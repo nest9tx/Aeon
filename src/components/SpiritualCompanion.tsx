@@ -225,6 +225,18 @@ export default function SpiritualCompanion() {
     return "text-slate-400";
   };
 
+  const getStorageModeDotClass = (mode: "None" | "Session" | "Persistent") => {
+    if (mode === "Persistent") return "bg-emerald-400";
+    if (mode === "Session") return "bg-sky-400";
+    return "bg-slate-500";
+  };
+
+  const getCurrentStorageModeDotGlowClass = (mode: "None" | "Session" | "Persistent") => {
+    if (mode === "Persistent") return "shadow-[0_0_8px_rgba(52,211,153,0.65)]";
+    if (mode === "Session") return "shadow-[0_0_8px_rgba(56,189,248,0.6)]";
+    return "shadow-[0_0_6px_rgba(100,116,139,0.45)]";
+  };
+
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const hasLiveCheckout = Boolean(
     STRIPE_CHECKOUT_URLS["3.33"] || STRIPE_CHECKOUT_URLS["7.77"] || STRIPE_CHECKOUT_URLS["8.88"]
@@ -740,11 +752,19 @@ export default function SpiritualCompanion() {
                   <div className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-2 space-y-1">
                     <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wide">
                       <span className="text-white/45">Current storage mode</span>
-                      <span className={getStorageModeClass(keyStorageModeLabel)}>{keyStorageModeLabel}</span>
+                      <span className={`inline-flex items-center gap-1.5 ${getStorageModeClass(keyStorageModeLabel)}`}>
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full animate-pulse ${getStorageModeDotClass(keyStorageModeLabel)} ${getCurrentStorageModeDotGlowClass(keyStorageModeLabel)}`}
+                        />
+                        <span>{keyStorageModeLabel}</span>
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wide">
                       <span className="text-white/45">On next save</span>
-                      <span className={getStorageModeClass(nextSaveModeLabel)}>{nextSaveModeLabel}</span>
+                      <span className={`inline-flex items-center gap-1.5 ${getStorageModeClass(nextSaveModeLabel)}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${getStorageModeDotClass(nextSaveModeLabel)}`} />
+                        <span>{nextSaveModeLabel}</span>
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
